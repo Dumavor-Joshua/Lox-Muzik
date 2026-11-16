@@ -6203,8 +6203,9 @@ input:focus-visible {
 
 .account-profile-page {
   display: grid;
-  gap: 18px;
-  padding: 22px 0 56px;
+  min-width: 0;
+  gap: clamp(16px, 3vw, 22px);
+  padding: clamp(16px, 3vw, 24px) 0 clamp(32px, 7vw, 56px);
 }
 
 .account-profile-page[hidden] {
@@ -6213,31 +6214,31 @@ input:focus-visible {
 
 .account-profile-card {
   display: grid;
-  gap: 22px;
-  max-width: 720px;
-  padding: 24px;
+  width: min(100%, 720px);
+  min-width: 0;
+  gap: clamp(18px, 3vw, 22px);
+  padding: clamp(16px, 3vw, 24px);
   border: 1px solid rgba(226, 174, 255, .16);
   border-radius: 12px;
   background: linear-gradient(145deg, rgba(33, 17, 55, .82), rgba(25, 10, 44, .7));
 }
 
 .account-profile-identity {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   min-width: 0;
   align-items: center;
-  gap: 16px;
+  gap: clamp(12px, 2vw, 16px);
 }
 
 .account-profile-avatar {
   width: 64px;
   height: 64px;
-  flex-basis: 64px;
   font-size: 18px;
 }
 
 .account-profile-copy {
   min-width: 0;
-  flex: 1;
 }
 
 .account-profile-copy h2,
@@ -6267,16 +6268,36 @@ input:focus-visible {
 }
 
 @media (max-width: 560px) {
-  .account-profile-card {
-    padding: 18px;
+  .account-profile-identity {
+    grid-template-columns: 52px minmax(0, 1fr);
   }
 
-  .account-profile-identity {
-    flex-wrap: wrap;
+  .account-profile-avatar {
+    width: 52px;
+    height: 52px;
   }
 
   .account-profile-role {
-    margin-left: 80px;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    margin: 0;
+  }
+
+  .account-profile-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  }
+
+  .account-profile-actions > .artist-action-button {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 380px) {
+  .account-profile-actions {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
