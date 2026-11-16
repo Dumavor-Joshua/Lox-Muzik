@@ -597,7 +597,7 @@ input:focus-visible {
 
 .artist-profile-form .field input,
 .creator-radio-form .field input,
-.creator-song-form .field input,
+.creator-song-form .field input:not([type="checkbox"]),
 .creator-song-form .field select {
   border-color: var(--line);
   border-radius: 10px;
@@ -975,6 +975,66 @@ input:focus-visible {
   line-height: 1.45;
 }
 
+.creator-permissions-field,
+.creator-copyright-field {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.creator-permission-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.creator-permission-option {
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(8, 3, 17, 0.42);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.creator-permission-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.creator-permission-option input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  flex: 0 0 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  accent-color: var(--pink);
+  cursor: pointer;
+}
+
+.creator-permission-option:focus-within {
+  outline: 2px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.creator-copyright-confirm {
+  align-items: flex-start;
+}
+
+.creator-copyright-confirm input[type="checkbox"] {
+  margin-top: 1px;
+}
+
 .creator-song-form .field input[type="file"] {
   min-height: 48px;
   padding: 9px;
@@ -1166,6 +1226,10 @@ input:focus-visible {
 
   .creator-radio-form,
   .creator-song-form {
+    grid-template-columns: 1fr;
+  }
+
+  .creator-permission-options {
     grid-template-columns: 1fr;
   }
 
@@ -7656,11 +7720,22 @@ body.reduce-motion *::after {
     font-size: 12px;
   }
 
-  .creator-song-form .field input,
+  .creator-song-form .field input:not([type="checkbox"]),
   .creator-song-form .field select,
   .creator-radio-form .field input {
     min-height: 48px;
     font-size: 16px;
+  }
+
+  .creator-song-form .field input:not([type="checkbox"]),
+  .creator-radio-form .field input {
+    width: 100%;
+  }
+
+  .creator-permission-option {
+    min-height: 52px;
+    padding: 12px;
+    font-size: 14px;
   }
 
   .creator-song-form .field input[type="file"] {

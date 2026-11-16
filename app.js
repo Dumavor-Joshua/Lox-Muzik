@@ -91,21 +91,19 @@
     return `${safeEmail}/${Date.now()}-${safeName}`;
   };
   const uploadSongToSupabaseStorage = async (file, email, bucketName) => {
-    if (!supabaseClient || !bucketName || !file) throw new Error("Cloud song storage is not available.");
+    if (!supabaseClient || !bucketName || !file) return null;
     const path = buildSongStoragePath(email, file.name);
-    const bucket = supabaseClient.storage.from(bucketName);
-    const { error } = await bucket.upload(path, file, {
+    const { error } = await supabaseClient.storage.from(bucketName).upload(path, file, {
       cacheControl: "3600",
       upsert: false,
       contentType: file.type || "application/octet-stream",
     });
     if (error) throw error;
-    const { data } = bucket.getPublicUrl(path);
-    if (!data?.publicUrl) throw new Error("Could not create a public link for the uploaded file.");
-    return { bucketName, path, url: data.publicUrl };
+    const { data } = supabaseClient.storage.from(bucketName).getPublicUrl(path);
+    return data?.publicUrl || null;
   };
   const publishSongToSupabase = async (payload) => {
-    if (!supabaseClient) throw new Error("Cloud song publishing is not available.");
+    if (!supabaseClient) return null;
     const { data, error } = await supabaseClient.from("songs").insert([payload]).select().single();
     if (error) throw error;
     return data;
@@ -138,6 +136,56 @@
       if (song?.id != null) songsById.set(String(song.id), song);
     });
     return Array.from(songsById.values());
+  };
+  const mapSupabaseSongToTrack = (song, index) => {
+    const artistNames = (Array.isArray(song.artist_names) && song.artist_names.length
+      ? song.artist_names
+      : splitArtistCredits(song.artist)).map(canonicalizeArtistName);
+    return {
+      id: `supabase-${String(song.id)}`,
+      title: String(song.title || "Untitled"),
+      artist: String(song.artist || artistNames.join(" feat. ")),
+      artistNames,
+      ownerEmail: String(song.ownerEmail || ""),
+      fileName: String(song.file_name || `${song.title || "song"}.mp3`),
+      releaseType: ["album", "mix"].includes(song.release_type) ? song.release_type : "single",
+      genre: String(song.genre || ""),
+      url: String(song.audio_url || ""),
+      duration: Number(song.duration) || 0,
+      liked: false,
+      searches: Number(song.searches) || 0,
+      downloads: Number(song.downloads) || 0,
+      plays: Number(song.plays) || 0,
+      art: index % 5,
+      coverUrl: song.cover_url || null,
+      allowStreaming: song.allow_streaming !== false,
+      allowOffline: song.allow_offline !== false,
+      allowDownloadToPhone: song.allow_download_to_phone !== false,
+      allowVideoUse: song.allow_video_use === true,
+      isSupabaseTrack: true,
+    };
+  };
+  let sharedSongCatalogRequestId = 0;
+  const refreshSharedSongCatalog = async () => {
+    const requestId = ++sharedSongCatalogRequestId;
+    try {
+      const songs = await loadSupabaseSongs();
+      if (requestId !== sharedSongCatalogRequestId) return;
+      const cloudTracks = songs
+        .map(mapSupabaseSongToTrack)
+        .filter((track) => track.url);
+      for (let index = tracks.length - 1; index >= 0; index -= 1) {
+        if (tracks[index].isSupabaseTrack) tracks.splice(index, 1);
+      }
+      tracks.push(...cloudTracks);
+      render();
+    } catch (error) {
+      if (requestId !== sharedSongCatalogRequestId) return;
+      console.error("Could not load the shared song catalog.", error);
+      showToast(error instanceof Error
+        ? `Could not load the shared song catalog: ${error.message}`
+        : "Could not load the shared song catalog. Check your connection and try again.");
+    }
   };
   const creatorProfilePhotoRemove = document.querySelector("#creator-profile-photo-remove");
   const settingsAccountAvatar = document.querySelector("#settings-account-avatar");
@@ -555,52 +603,6 @@
     .split(/\s*(?:,|;|&|\bfeat(?:uring)?\.?|\bft\.?|\bwith\b)\s*/i)
     .map((name) => canonicalizeArtistName(name.replace(/__TONES_AND_I__/gi, "Tones And I")))
     .filter(Boolean);
-  const mapSupabaseSongToTrack = (song, index) => {
-    const artistNames = (Array.isArray(song.artist_names) && song.artist_names.length
-      ? song.artist_names
-      : splitArtistCredits(song.artist)).map(canonicalizeArtistName);
-    return {
-      id: `supabase-${String(song.id)}`,
-      title: String(song.title || "Untitled"),
-      artist: String(song.artist || artistNames.join(" feat. ")),
-      artistNames,
-      ownerEmail: String(song.ownerEmail || ""),
-      fileName: String(song.file_name || `${song.title || "song"}.mp3`),
-      releaseType: ["album", "mix"].includes(song.release_type) ? song.release_type : "single",
-      genre: String(song.genre || ""),
-      url: String(song.audio_url || ""),
-      duration: Number(song.duration) || 0,
-      liked: false,
-      searches: Number(song.searches) || 0,
-      downloads: Number(song.downloads) || 0,
-      plays: Number(song.plays) || 0,
-      art: index % 5,
-      coverUrl: song.cover_url || null,
-      allowStreaming: song.allow_streaming !== false,
-      allowOffline: song.allow_offline !== false,
-      allowDownloadToPhone: song.allow_download_to_phone !== false,
-      allowVideoUse: song.allow_video_use === true,
-      isSupabaseTrack: true,
-    };
-  };
-  const refreshSharedSongCatalog = async () => {
-    try {
-      const songs = await loadSupabaseSongs();
-      const cloudTracks = songs
-        .map(mapSupabaseSongToTrack)
-        .filter((track) => track.url);
-      for (let index = tracks.length - 1; index >= 0; index -= 1) {
-        if (tracks[index].isSupabaseTrack) tracks.splice(index, 1);
-      }
-      tracks.push(...cloudTracks);
-      render();
-    } catch (error) {
-      console.error("Could not load the shared song catalog.", error);
-      showToast(error instanceof Error
-        ? `Could not load the shared song catalog: ${error.message}`
-        : "Could not load the shared song catalog. Check your connection and try again.");
-    }
-  };
   const localCatalogTracks = (Array.isArray(window.LOX_MUZIK_CATALOG) ? window.LOX_MUZIK_CATALOG : [])
     .map((track, index) => {
       const artistNames = (Array.isArray(track.artistNames) && track.artistNames.length
@@ -874,12 +876,19 @@
       message.append(actor);
       message.append(document.createTextNode(notification.type === "follow"
         ? " followed your artist profile."
-        : ` liked “${notification.trackTitle || "your song"}”.`));
+        : notification.type === "artist-like"
+          ? " liked your artist profile."
+          : ` liked “${notification.trackTitle || "your song"}”.`));
       const details = document.createElement("small");
       const timestamp = notification.createdAt
         ? new Date(notification.createdAt).toLocaleString()
         : "Recently";
-      details.textContent = `${notification.type === "follow" ? "New follower" : notification.artistName || "Your artist profile"} · ${timestamp}`;
+      const activityLabel = notification.type === "follow"
+        ? "New follower"
+        : notification.type === "artist-like"
+          ? "New artist like"
+          : notification.artistName || "Your artist profile";
+      details.textContent = `${activityLabel} · ${timestamp}`;
       copy.append(message, details);
       item.append(icon, copy);
       notificationsList.append(item);
@@ -1069,6 +1078,7 @@
     return {
       liked: likers.includes(actorKey),
       followed: followers.includes(actorKey),
+      likes: likers.length,
       followers: followers.length,
     };
   };
@@ -1114,13 +1124,13 @@
     }
   };
   const getCreatorNameForTrack = (track) => String(creatorNames[track.ownerEmail] || track.artist || "your artist profile").trim();
-  const notifyArtistFollowers = (artistName) => {
+  const notifyArtistOwners = (artistName, type) => {
     const recipients = new Set(getReleaseTracks()
       .filter((track) => track.ownerEmail && getTrackArtistNames(track).some((name) => isSameArtist(name, artistName)))
       .map((track) => track.ownerEmail.toLocaleLowerCase())
       .filter((email) => email !== accountEmail));
     recipients.forEach((email) => addCreatorNotification(email, {
-      type: "follow",
+      type,
       artistName: canonicalizeArtistName(artistName),
     }));
   };
@@ -1148,13 +1158,15 @@
     const engagement = getArtistEngagementRecord(artistName);
     const likers = Array.isArray(engagement.likers) ? engagement.likers : [];
     const actorKey = getActorKey();
+    const wasLiked = likers.includes(actorKey);
     artistEngagement.set(key, {
       ...engagement,
       name: canonicalizeArtistName(artistName),
-      likers: likers.includes(actorKey) ? likers.filter((liker) => liker !== actorKey) : [...likers, actorKey],
+      likers: wasLiked ? likers.filter((liker) => liker !== actorKey) : [...likers, actorKey],
       followers: Array.isArray(engagement.followers) ? engagement.followers : [],
     });
     saveArtistEngagement();
+    if (!wasLiked) notifyArtistOwners(artistName, "artist-like");
   };
   const toggleArtistFollow = (artistName) => {
     const key = normalizeArtistKey(artistName);
@@ -1169,7 +1181,7 @@
       followers: wasFollowing ? followers.filter((follower) => follower !== actorKey) : [...followers, actorKey],
     });
     saveArtistEngagement();
-    if (!wasFollowing) notifyArtistFollowers(artistName);
+    if (!wasFollowing) notifyArtistOwners(artistName, "follow");
   };
   const getReleaseTracks = () => [
     ...localCatalogTracks,
@@ -2452,17 +2464,17 @@
       const artistTracks = getArtistTracks(selectedArtistName);
       const firstTrack = artistTracks[0];
       const engagement = getArtistEngagement(selectedArtistName);
-      const likedTrackCount = artistTracks.reduce((count, track) => count + getTrackLikeCount(track), 0);
       artistHero.className = `artist-hero art-${firstTrack?.art ?? 0}`;
       artistHero.setAttribute("aria-label", `${selectedArtistName} artist artwork`);
       applyArtistArtwork(artistHero, selectedArtistName);
       document.querySelector("#artist-detail-name").textContent = selectedArtistName;
       const albumTracks = artistTracks.filter((track) => getReleaseType(track) === "album");
       const albumCount = albumTracks.length;
-      const albumStatButton = document.querySelector("#artist-follower-count")?.closest(".artist-stat-pill");
+      const albumStatButton = document.querySelector("#artist-album-count")?.closest(".artist-stat-pill");
       const albumStatLabel = albumStatButton?.querySelector("span:last-child");
-      document.querySelector("#artist-like-count").textContent = String(likedTrackCount + Number(engagement.liked));
-      document.querySelector("#artist-follower-count").textContent = String(albumCount);
+      document.querySelector("#artist-like-count").textContent = String(engagement.likes);
+      document.querySelector("#artist-follow-count").textContent = String(engagement.followers);
+      document.querySelector("#artist-album-count").textContent = String(albumCount);
       if (albumStatLabel) albumStatLabel.textContent = albumCount === 1 ? "album" : "albums";
       if (albumStatButton) albumStatButton.hidden = albumCount === 0;
       const likeButton = document.querySelector("#artist-like-button");
@@ -3667,14 +3679,6 @@
     pendingDownloadRequest = null;
     downloadDestinationDialog.close();
     if (!request) return;
-    if (destination === "device" && request.track.allowDownloadToPhone === false) {
-      showToast("The artist has not enabled downloads to your device for this song.");
-      return;
-    }
-    if (destination === "offline" && request.track.allowOffline === false) {
-      showToast("The artist has not enabled offline listening for this song.");
-      return;
-    }
     if (request.triggerButton?.isConnected) request.triggerButton.disabled = true;
     downloadTrack(request.track, destination, request.triggerButton);
   };
@@ -3809,65 +3813,90 @@
     const submitButton = creatorSongForm.querySelector('[type="submit"]');
     submitButton.disabled = true;
     submitButton.textContent = "Publishing…";
-    const uploadedObjects = [];
-    let songPublished = false;
     try {
-      if (!supabaseClient) throw new Error("Cloud publishing is not available. Refresh the app and try again.");
       const embeddedCover = coverFile ? null : await readEmbeddedCover(file);
-      const audioObject = await uploadSongToSupabaseStorage(file, accountEmail, "music-files");
-      uploadedObjects.push(audioObject);
-      let coverUrl = embeddedCover;
-      if (coverFile) {
-        const coverObject = await uploadSongToSupabaseStorage(coverFile, accountEmail, "artist-covers");
-        uploadedObjects.push(coverObject);
-        coverUrl = coverObject.url;
+      let audioUrl = URL.createObjectURL(file);
+      let coverUrl = coverFile ? URL.createObjectURL(coverFile) : embeddedCover;
+      let savedSong = null;
+
+      if (supabaseClient) {
+        try {
+          const [audioResult, coverResult] = await Promise.all([
+            uploadSongToSupabaseStorage(file, accountEmail, "music-files"),
+            coverFile ? uploadSongToSupabaseStorage(coverFile, accountEmail, "artist-covers") : Promise.resolve(null),
+          ]);
+          if (audioResult) audioUrl = audioResult;
+          if (coverResult) coverUrl = coverResult;
+          const songInsert = {
+            title,
+            artist,
+            artist_names: splitArtistCredits(artist),
+            owner_email: accountEmail,
+            upload_source: "web",
+            file_name: file.name,
+            audio_url: audioUrl,
+            cover_url: coverUrl,
+            release_type: (() => {
+              const selectedReleaseType = String(creatorFormData.get("releaseType") || "single");
+              if (selectedReleaseType === "mix") return "mix";
+              if (selectedReleaseType === "album") return "album";
+              return "single";
+            })(),
+            genre: creatorFormData.get("genre") === "auto" ? null : creatorFormData.get("genre"),
+            allow_streaming: creatorFormData.get("allowStreaming") !== "off",
+            allow_offline: creatorFormData.get("allowOffline") !== "off",
+            allow_download_to_phone: creatorFormData.get("allowDownloadToPhone") === "on",
+            allow_video_use: creatorFormData.get("allowVideoUse") === "on",
+            created_at: new Date().toISOString(),
+          };
+          savedSong = await publishSongToSupabase(songInsert);
+          if (savedSong) {
+            audioUrl = savedSong.audio_url || audioUrl;
+            coverUrl = savedSong.cover_url || coverUrl;
+          }
+        } catch (storageError) {
+          showToast(storageError instanceof Error ? `Cloud upload failed, so this song was saved locally only: ${storageError.message}` : "Cloud upload failed, so this song was saved locally only.");
+        }
       }
 
-      const selectedReleaseType = String(creatorFormData.get("releaseType") || "single");
-      const songInsert = {
+      const newTrack = {
+        id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         title,
         artist,
-        artist_names: splitArtistCredits(artist),
-        owner_email: accountEmail,
-        upload_source: "web",
-        file_name: file.name,
-        audio_url: audioObject.url,
-        cover_url: coverUrl,
-        release_type: ["single", "album", "mix"].includes(selectedReleaseType) ? selectedReleaseType : "single",
-        genre: creatorFormData.get("genre") === "auto" ? null : creatorFormData.get("genre"),
-        allow_streaming: creatorFormData.has("allowStreaming"),
-        allow_offline: creatorFormData.has("allowOffline"),
-        allow_download_to_phone: creatorFormData.has("allowDownloadToPhone"),
-        allow_video_use: creatorFormData.has("allowVideoUse"),
-        created_at: new Date().toISOString(),
+        artistNames: splitArtistCredits(artist),
+        ownerEmail: accountEmail,
+        fileName: file.name,
+        size: file.size,
+        releaseType: (() => {
+          const selectedReleaseType = String(creatorFormData.get("releaseType") || "single");
+          if (selectedReleaseType === "mix") return "mix";
+          if (selectedReleaseType === "album") return "album";
+          return "single";
+        })(),
+        genre: creatorFormData.get("genre") === "auto" ? "" : creatorFormData.get("genre"),
+        url: audioUrl,
+        duration: 0,
+        liked: false,
+        searches: 0,
+        downloads: 0,
+        plays: 0,
+        art: tracks.length % 5,
+        coverUrl,
+        allowStreaming: creatorFormData.get("allowStreaming") !== "off",
+        allowOffline: creatorFormData.get("allowOffline") !== "off",
+        allowDownloadToPhone: creatorFormData.get("allowDownloadToPhone") === "on",
+        allowVideoUse: creatorFormData.get("allowVideoUse") === "on",
       };
-      const savedSong = await publishSongToSupabase(songInsert);
-      songPublished = true;
-      const newTrack = mapSupabaseSongToTrack({ ...savedSong, ownerEmail: accountEmail }, tracks.length);
-      newTrack.size = file.size;
-      tracks.push(newTrack);
+      tracks.push(savedSong
+        ? { ...mapSupabaseSongToTrack({ ...savedSong, ownerEmail: accountEmail }, tracks.length), size: file.size }
+        : newTrack);
+      if (savedSong) refreshSharedSongCatalog();
       creatorSongForm.reset();
       creatorSongArtist.value = creatorName;
       creatorSongArtist.dataset.autoArtist = creatorName;
       creatorSongTitle.dataset.fileSuggestion = "";
       render();
-      showToast(newTrack.allowStreaming
-        ? "Song published to the shared catalog."
-        : "Song saved to your private catalog.");
-    } catch (error) {
-      if (!songPublished) {
-        await Promise.all(uploadedObjects.map(async ({ bucketName, path }) => {
-          try {
-            const { error: cleanupError } = await supabaseClient.storage.from(bucketName).remove([path]);
-            if (cleanupError) console.error("Could not remove an incomplete song upload.", cleanupError);
-          } catch (cleanupError) {
-            console.error("Could not remove an incomplete song upload.", cleanupError);
-          }
-        }));
-      }
-      showToast(error instanceof Error
-        ? `Could not publish song: ${error.message}`
-        : "Could not publish song. Check your connection and try again.");
+      showToast("Song added to your catalog.");
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = "＋ Publish song";
@@ -5020,8 +5049,8 @@
   if (authPage) authPage.classList.add("app-shell-hidden");
   if (appShell) appShell.classList.remove("app-shell-hidden");
   render();
-  initializeCompactSelects();
   refreshSharedSongCatalog();
+  initializeCompactSelects();
   if ("serviceWorker" in navigator && window.isSecureContext) {
     navigator.serviceWorker.register("./service-worker.js").catch((error) => {
       console.error("Could not prepare Lox-Muzik for offline use.", error);

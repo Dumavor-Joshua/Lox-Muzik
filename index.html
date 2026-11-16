@@ -50,7 +50,8 @@
           <input type="password" name="password" autocomplete="current-password" placeholder="Password" required />
         </label>
 
-        <button id="forgot-password-toggle" class="text-link forgot-password-link" type="button">Forgot password?</button>
+        <button id="forgot-password-toggle" class="text-link forgot-password-link" type="button">Forgot
+          password?</button>
         <button class="primary-button auth-submit" type="submit">Continue as listener</button>
       </form>
 
@@ -65,11 +66,13 @@
       <form id="password-recovery-form" class="auth-form" hidden>
         <label class="field">
           <span>New password</span>
-          <input type="password" name="password" autocomplete="new-password" placeholder="Enter a new password" required />
+          <input type="password" name="password" autocomplete="new-password" placeholder="Enter a new password"
+            required />
         </label>
         <label class="field">
           <span>Confirm new password</span>
-          <input type="password" name="confirmPassword" autocomplete="new-password" placeholder="Enter your new password again" required />
+          <input type="password" name="confirmPassword" autocomplete="new-password"
+            placeholder="Enter your new password again" required />
         </label>
         <button class="primary-button auth-submit" type="submit">Save new password</button>
       </form>
@@ -92,7 +95,8 @@
 
         <label class="field">
           <span>Confirm password</span>
-          <input type="password" name="confirmPassword" autocomplete="new-password" placeholder="Enter your password again" required />
+          <input type="password" name="confirmPassword" autocomplete="new-password"
+            placeholder="Enter your password again" required />
         </label>
 
         <button class="primary-button auth-submit" type="submit">Create listener account</button>
@@ -116,23 +120,28 @@
     </div>
   </div>
 
-  <section id="email-confirmation-page" class="email-confirmation-page app-shell-hidden" aria-labelledby="email-confirmation-title">
+  <section id="email-confirmation-page" class="email-confirmation-page app-shell-hidden"
+    aria-labelledby="email-confirmation-title">
     <div class="email-confirmation-card">
       <div class="email-confirmation-icon" aria-hidden="true">
         <svg viewBox="0 0 64 64" fill="none">
           <rect x="7" y="14" width="50" height="36" rx="8" stroke="currentColor" stroke-width="3" />
-          <path d="m11 19 21 17 21-17" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="m11 19 21 17 21-17" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+            stroke-linejoin="round" />
           <circle cx="49" cy="47" r="11" fill="#17101d" stroke="currentColor" stroke-width="3" />
-          <path d="M49 41v7l4 2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M49 41v7l4 2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
       </div>
       <p class="email-confirmation-kicker">One last step</p>
       <h1 id="email-confirmation-title" tabindex="-1">Check your inbox</h1>
       <p class="email-confirmation-copy">We sent a confirmation link to</p>
       <strong id="email-confirmation-address" class="email-confirmation-address"></strong>
-      <p class="email-confirmation-instructions">Open the email and select <strong>Confirm your email</strong>. Keep this page open; once your email is confirmed, we’ll take you straight to Lox-Muzik.</p>
+      <p class="email-confirmation-instructions">Open the email and select <strong>Confirm your email</strong>. Keep
+        this page open; once your email is confirmed, we’ll take you straight to Lox-Muzik.</p>
       <p id="email-confirmation-status" class="email-confirmation-status" role="status" aria-live="polite"></p>
-      <button id="resend-confirmation-button" class="primary-button email-confirmation-resend" type="button">Resend confirmation email</button>
+      <button id="resend-confirmation-button" class="primary-button email-confirmation-resend" type="button">Resend
+        confirmation email</button>
     </div>
   </section>
 
@@ -516,13 +525,15 @@
             </div>
           </div>
           <div class="artist-profile-bar">
-            <div class="artist-stats" aria-label="Artist likes and followers">
+            <div class="artist-stats" aria-label="Artist likes, followers, and releases">
               <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
-                  aria-hidden="true">◉</span><strong id="artist-like-count">0</strong><span>followers</span></button>
+                  aria-hidden="true">♥</span><strong id="artist-like-count">0</strong><span>likes</span></button>
+              <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
+                  aria-hidden="true">◉</span><strong id="artist-follow-count">0</strong><span>followers</span></button>
               <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
                   aria-hidden="true">♬</span><strong id="artist-song-count">0</strong><span>songs</span></button>
               <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
-                  aria-hidden="true">▣</span><strong id="artist-follower-count">0</strong><span>albums</span></button>
+                  aria-hidden="true">▣</span><strong id="artist-album-count">0</strong><span>albums</span></button>
             </div>
             <div class="artist-profile-actions">
               <button id="artist-like-button" class="artist-action-button" type="button">♡ Like</button>
@@ -725,18 +736,27 @@
                 appears.</small>
             </label>
 
-            <div class="field">
+            <div class="field creator-permissions-field">
               <span>Song permissions</span>
-              <label><input type="checkbox" name="allowStreaming" checked /> Allow Streaming</label>
-              <label><input type="checkbox" name="allowOffline" checked /> Allow Save Offline</label>
-              <label><input type="checkbox" name="allowDownloadToPhone" checked /> Allow Download to Phone</label>
-              <label><input type="checkbox" name="allowVideoUse" /> Allow Others to Use in Videos</label>
+              <div class="creator-permission-options">
+                <label class="creator-permission-option"><input type="checkbox" name="allowStreaming" checked />
+                  <span>Allow Streaming</span></label>
+                <label class="creator-permission-option"><input type="checkbox" name="allowOffline" checked />
+                  <span>Allow Save Offline</span></label>
+                <label class="creator-permission-option"><input type="checkbox" name="allowDownloadToPhone" />
+                  <span>Allow Download to Phone</span></label>
+                <label class="creator-permission-option"><input type="checkbox" name="allowVideoUse" />
+                  <span>Allow Others to Use in Videos</span></label>
+              </div>
             </div>
 
-            <label class="field">
+            <div class="field creator-copyright-field">
               <span>Copyright confirmation <b aria-hidden="true">*</b></span>
-              <label><input type="checkbox" name="copyrightConfirm" required /> I confirm that I own this song or have permission to upload and distribute it.</label>
-            </label>
+              <label class="creator-permission-option creator-copyright-confirm">
+                <input type="checkbox" name="copyrightConfirm" required />
+                <span>I confirm that I own this song or have permission to upload and distribute it.</span>
+              </label>
+            </div>
 
             <button class="artist-play-button creator-song-submit" type="submit">＋ Publish song</button>
           </form>
@@ -1253,7 +1273,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="songs/catalog.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=shared-song-library-1"></script>
+  <script src="app.js?v=artist-engagement-1"></script>
 </body>
 
 </html>
