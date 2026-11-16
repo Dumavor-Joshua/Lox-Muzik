@@ -641,6 +641,14 @@
   }).filter(Boolean);
   const playlists = [];
   const playedTrackIds = [];
+  const storedTrackPlays = readStoredValue("loxMuzikTrackPlays", {});
+  const trackPlayCounts = new Map(
+    storedTrackPlays && typeof storedTrackPlays === "object" && !Array.isArray(storedTrackPlays)
+      ? Object.entries(storedTrackPlays)
+        .filter(([, plays]) => Number.isFinite(Number(plays)) && Number(plays) >= 0)
+        .map(([id, plays]) => [id, Number(plays)])
+      : [],
+  );
   const storedArtistEngagement = readStoredValue("loxMuzikArtistEngagement", {});
   const artistEngagement = new Map(
     storedArtistEngagement && typeof storedArtistEngagement === "object" && !Array.isArray(storedArtistEngagement)
@@ -1183,11 +1191,25 @@
     saveArtistEngagement();
     if (!wasFollowing) notifyArtistOwners(artistName, "follow");
   };
-  const getReleaseTracks = () => [
-    ...localCatalogTracks,
-    ...tracks.filter((track) => track.allowStreaming !== false
-      || (currentRole === "creator" && track.ownerEmail === accountEmail)),
-  ];
+  const getReleaseTracks = () => {
+    const releaseTracks = [
+      ...localCatalogTracks,
+      ...tracks.filter((track) => track.allowStreaming !== false
+        || (currentRole === "creator" && track.ownerEmail === accountEmail)),
+    ];
+    releaseTracks.forEach((track) => {
+      track.plays = Math.max(Number(track.plays) || 0, trackPlayCounts.get(String(track.id)) || 0);
+    });
+    return releaseTracks;
+  };
+  const recordTrackPlay = (track) => {
+    if (!track) return;
+    track.plays = (Number(track.plays) || 0) + 1;
+    trackPlayCounts.set(String(track.id), track.plays);
+    if (!writeStoredValue("loxMuzikTrackPlays", Object.fromEntries(trackPlayCounts))) {
+      console.error("Could not save song play counts.");
+    }
+  };
   const songGenreDefinitions = [
     { genre: "Afrobeats", category: "African Music", aliases: ["Afrobeat", "Afro beats"] },
     { genre: "Afropop", category: "African Music", aliases: ["Afro pop", "Afroswing"] },
@@ -1523,12 +1545,14 @@
         const existing = artistMap.get(key) || {
           name,
           count: 0,
+          plays: 0,
           albums: 0,
           singles: 0,
           mixes: 0,
           art: track.art,
         };
         existing.count += 1;
+        existing.plays += Number(track.plays) || 0;
         if (releaseType === "album") existing.albums += 1;
         else if (releaseType === "mix") existing.mixes += 1;
         else existing.singles += 1;
@@ -1537,29 +1561,19 @@
     });
 
     const artists = Array.from(artistMap.values()).sort((first, second) => (
-      second.count - first.count || first.name.localeCompare(second.name)
+      second.plays - first.plays
+      || second.count - first.count
+      || first.name.localeCompare(second.name)
     ));
-    const prepared = artists.slice(0, 6).map((artist) => {
-      const segments = [];
-      if (artist.albums) segments.push(`${artist.albums} album${artist.albums === 1 ? "" : "s"}`);
-      if (artist.singles) segments.push(`${artist.singles} single${artist.singles === 1 ? "" : "s"}`);
-      if (artist.mixes) segments.push(`${artist.mixes} mix${artist.mixes === 1 ? "" : "es"}`);
+    return artists.map((artist) => {
+      const songsLabel = `${artist.count} ${artist.count === 1 ? "song" : "songs"}`;
       return {
         ...artist,
-        releaseSummary: segments.join(" • ") || "Featured artist",
+        releaseSummary: artist.plays
+          ? `${artist.plays} ${artist.plays === 1 ? "play" : "plays"} · ${songsLabel}`
+          : songsLabel,
       };
     });
-
-    if (prepared.length) return prepared;
-
-    return [
-      { name: "Black Sherif", art: 0, releaseSummary: "Featured artist" },
-      { name: "Burna Boy", art: 1, releaseSummary: "Featured artist" },
-      { name: "Wizkid", art: 2, releaseSummary: "Featured artist" },
-      { name: "Sarkodie", art: 3, releaseSummary: "Featured artist" },
-      { name: "Stonebwoy", art: 4, releaseSummary: "Featured artist" },
-      { name: "Lucky Dube", art: 0, releaseSummary: "Featured artist" },
-    ];
   };
   const createArtistPlaceholder = (artistName) => {
     let hash = 0;
@@ -3179,7 +3193,7 @@
       document.body.classList.add("has-player");
       crossfadeInProgress = true;
       crossfadeProgress = 0;
-      track.plays = (Number(track.plays) || 0) + 1;
+      recordTrackPlay(track);
       const previousPlayIndex = playedTrackIds.indexOf(currentTrackId);
       if (previousPlayIndex !== -1) playedTrackIds.splice(previousPlayIndex, 1);
       playedTrackIds.unshift(currentTrackId);
@@ -4785,7 +4799,7 @@
       }
       if (player !== audio) return;
       const track = currentTrack();
-      if (track) track.plays = (Number(track.plays) || 0) + 1;
+      recordTrackPlay(track);
       const previousPlayIndex = playedTrackIds.indexOf(currentTrackId);
       if (previousPlayIndex !== -1) playedTrackIds.splice(previousPlayIndex, 1);
       playedTrackIds.unshift(currentTrackId);
