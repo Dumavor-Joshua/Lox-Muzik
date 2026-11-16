@@ -58,6 +58,53 @@
       },
     })
     : null;
+  const getMusicStoragePath = (audioUrl) => {
+    const value = String(audioUrl || "").trim();
+    if (!value) return null;
+    const storageMarkers = [
+      "/storage/v1/object/public/music-files/",
+      "/storage/v1/object/sign/music-files/",
+    ];
+    for (const marker of storageMarkers) {
+      const markerIndex = value.indexOf(marker);
+      if (markerIndex === -1) continue;
+      try {
+        return decodeURIComponent(value.slice(markerIndex + marker.length).split(/[?#]/, 1)[0]);
+      } catch {
+        return null;
+      }
+    }
+    const storagePath = value.split(/[?#]/, 1)[0];
+    if (!storagePath || /^https?:\/\//i.test(storagePath)) return null;
+    if (/^(?:songs|imgs|Reference|assets|media|uploads)\//i.test(storagePath)) return null;
+    if (/^(?:[A-Za-z0-9._()\-+@]+\/)?[A-Za-z0-9._()\-+@]+(?:\/[A-Za-z0-9._()\-+@]+)*$/i.test(storagePath)) return storagePath;
+    return null;
+  };
+  const normalizeTrackSource = (track) => {
+    if (!track || typeof track !== "object") return track;
+    const candidateUrl = typeof track.url === "string" ? track.url : typeof track.audio_url === "string" ? track.audio_url : "";
+    const storagePath = getMusicStoragePath(candidateUrl) || getMusicStoragePath(track.storagePath || track.audio_url || "");
+    if (!storagePath) return track;
+    return {
+      ...track,
+      url: "",
+      storagePath,
+      audioUrlExpiresAt: 0,
+    };
+  };
+  const getTrackAudioUrl = async (track) => {
+    if (!track.storagePath) return track.url;
+    if (!supabaseClient) throw new Error("Secure song playback is unavailable.");
+    if (track.url && track.audioUrlExpiresAt > Date.now() + 60_000) return track.url;
+    const { data, error } = await supabaseClient.storage
+      .from("music-files")
+      .createSignedUrl(track.storagePath, 60 * 60);
+    if (error) throw error;
+    if (!data?.signedUrl) throw new Error("Could not create a secure song link.");
+    track.url = data.signedUrl;
+    track.audioUrlExpiresAt = Date.now() + 55 * 60 * 1000;
+    return track.url;
+  };
   const accountTypeCards = Array.from(document.querySelectorAll("[data-account-type]"));
   const creatorView = document.querySelector("#creator-view");
   const browseView = document.querySelector("#browse-view");
@@ -91,7 +138,7 @@
     return `${safeEmail}/${Date.now()}-${safeName}`;
   };
   const uploadSongToSupabaseStorage = async (file, email, bucketName) => {
-    if (!supabaseClient || !bucketName || !file) return null;
+    if (!supabaseClient || !bucketName || !file) throw new Error("Cloud song storage is not available.");
     const path = buildSongStoragePath(email, file.name);
     const { error } = await supabaseClient.storage.from(bucketName).upload(path, file, {
       cacheControl: "3600",
@@ -99,8 +146,10 @@
       contentType: file.type || "application/octet-stream",
     });
     if (error) throw error;
+    if (bucketName === "music-files") return { bucketName, path, url: path };
     const { data } = supabaseClient.storage.from(bucketName).getPublicUrl(path);
-    return data?.publicUrl || null;
+    if (!data?.publicUrl) throw new Error("Could not create a public link for the uploaded file.");
+    return { bucketName, path, url: data.publicUrl };
   };
   const publishSongToSupabase = async (payload) => {
     if (!supabaseClient) return null;
@@ -120,11 +169,7 @@
 
     let ownedSongs = [];
     if (isLoggedIn && currentRole === "creator" && accountEmail) {
-      const { data, error } = await supabaseClient
-        .from("songs")
-        .select(songColumns)
-        .eq("owner_email", accountEmail)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabaseClient.rpc("get_my_songs");
       if (error) throw error;
       ownedSongs = Array.isArray(data)
         ? data.map((song) => ({ ...song, ownerEmail: accountEmail }))
@@ -141,6 +186,7 @@
     const artistNames = (Array.isArray(song.artist_names) && song.artist_names.length
       ? song.artist_names
       : splitArtistCredits(song.artist)).map(canonicalizeArtistName);
+    const storagePath = getMusicStoragePath(song.audio_url);
     return {
       id: `supabase-${String(song.id)}`,
       title: String(song.title || "Untitled"),
@@ -150,7 +196,9 @@
       fileName: String(song.file_name || `${song.title || "song"}.mp3`),
       releaseType: ["album", "mix"].includes(song.release_type) ? song.release_type : "single",
       genre: String(song.genre || ""),
-      url: String(song.audio_url || ""),
+      url: storagePath ? "" : String(song.audio_url || ""),
+      storagePath,
+      audioUrlExpiresAt: 0,
       duration: Number(song.duration) || 0,
       liked: false,
       searches: Number(song.searches) || 0,
@@ -171,9 +219,14 @@
     try {
       const songs = await loadSupabaseSongs();
       if (requestId !== sharedSongCatalogRequestId) return;
-      const cloudTracks = songs
+      const cloudTracks = await Promise.all(songs
         .map(mapSupabaseSongToTrack)
-        .filter((track) => track.url);
+        .filter((track) => track.url || track.storagePath)
+        .map(async (track) => {
+          if (track.storagePath) await getTrackAudioUrl(track);
+          return track;
+        }));
+      if (requestId !== sharedSongCatalogRequestId) return;
       for (let index = tracks.length - 1; index >= 0; index -= 1) {
         if (tracks[index].isSupabaseTrack) tracks.splice(index, 1);
       }
@@ -605,18 +658,19 @@
     .filter(Boolean);
   const localCatalogTracks = (Array.isArray(window.LOX_MUZIK_CATALOG) ? window.LOX_MUZIK_CATALOG : [])
     .map((track, index) => {
-      const artistNames = (Array.isArray(track.artistNames) && track.artistNames.length
-        ? track.artistNames
-        : splitArtistCredits(track.artist)).map(canonicalizeArtistName);
+      const normalizedTrack = normalizeTrackSource(track);
+      const artistNames = (Array.isArray(normalizedTrack.artistNames) && normalizedTrack.artistNames.length
+        ? normalizedTrack.artistNames
+        : splitArtistCredits(normalizedTrack.artist)).map(canonicalizeArtistName);
       return {
-        ...track,
-        id: `folder-${track.id}`,
+        ...normalizedTrack,
+        id: `folder-${normalizedTrack.id}`,
         artistNames,
         artist: artistNames.join(" feat. "),
-        releaseType: track.releaseType || "single",
-        art: Number.isInteger(track.art) ? track.art : index % 5,
-        duration: Number(track.duration) || 0,
-        coverUrl: track.coverUrl || null,
+        releaseType: normalizedTrack.releaseType || "single",
+        art: Number.isInteger(normalizedTrack.art) ? normalizedTrack.art : index % 5,
+        duration: Number(normalizedTrack.duration) || 0,
+        coverUrl: normalizedTrack.coverUrl || null,
         liked: false,
         searches: 0,
         downloads: 0,
@@ -1046,6 +1100,8 @@
     download.ownerEmail === accountEmail
     && download.originalTrackId === (track.originalTrackId || track.id)
   )) || null;
+  const canStreamTrack = (track) => track.allowStreaming !== false
+    || (currentRole === "creator" && track.ownerEmail === accountEmail);
   const createOfflineTrack = (record) => ({
     ...record.track,
     id: `offline:${record.key}`,
@@ -3172,13 +3228,18 @@
     const outgoing = audio;
     const generation = ++crossfadeGeneration;
     incoming.pause();
-    incoming.src = track.url;
-    incoming.preload = getAudioPreload();
-    incoming.playbackRate = outgoing.playbackRate;
-    incoming.volume = 0;
-    incoming.load();
-    suppressedCrossfadePlayEvents.add(incoming);
-    incoming.play().then(() => {
+    getTrackAudioUrl(track).then((source) => {
+      if (generation !== crossfadeGeneration) return false;
+      if (!source) throw new Error("This song has no playable audio source.");
+      incoming.src = source;
+      incoming.preload = getAudioPreload();
+      incoming.playbackRate = outgoing.playbackRate;
+      incoming.volume = 0;
+      incoming.load();
+      suppressedCrossfadePlayEvents.add(incoming);
+      return incoming.play().then(() => true);
+    }).then((started) => {
+      if (!started) return;
       crossfadeRequestPending = false;
       if (generation !== crossfadeGeneration) {
         incoming.pause();
@@ -3242,7 +3303,7 @@
         crossfadeTimer = window.setTimeout(updateFade, 40);
       };
       updateFade();
-    }).catch(() => {
+    }).catch((error) => {
       crossfadeRequestPending = false;
       suppressedCrossfadePlayEvents.delete(incoming);
       if (generation !== crossfadeGeneration) return;
@@ -3250,7 +3311,9 @@
       incoming.removeAttribute("src");
       incoming.load();
       incoming.volume = Number(elements.volume.value);
-      showToast("Crossfade could not start this track; the current song will keep playing.");
+      showToast(error instanceof Error
+        ? `Crossfade could not start this track: ${error.message}`
+        : "Crossfade could not start this track; the current song will keep playing.");
     });
   };
 
@@ -3305,14 +3368,34 @@
     }
   };
 
-  const selectTrack = (id, shouldPlay, queue = null) => {
+  let trackSelectionRequestId = 0;
+  const selectTrack = async (id, shouldPlay, queue = null) => {
     const track = findTrack(id);
     if (!track) return;
     if (shouldPlay && !requireLogin("play music")) return;
+    if (!canStreamTrack(track)) {
+      showToast("The artist has not enabled streaming for this song.");
+      return;
+    }
+    const requestId = ++trackSelectionRequestId;
     if (crossfadeInProgress || crossfadeRequestPending) stopCrossfade();
     if (currentRadioStation) stopRadioStation();
     if (shouldPlay && currentTrackId !== track.id && crossfadeEnabled.value && audio.currentSrc && !audio.paused) {
       startCrossfade(track, queue);
+      return;
+    }
+    let source;
+    try {
+      source = await getTrackAudioUrl(track);
+    } catch (error) {
+      if (requestId === trackSelectionRequestId) {
+        showToast(error instanceof Error ? error.message : "Could not prepare this song for playback.");
+      }
+      return;
+    }
+    if (requestId !== trackSelectionRequestId) return;
+    if (!source) {
+      showToast("This song has no playable audio source.");
       return;
     }
     activeQueue = queue ? queue.slice() : null;
@@ -3323,7 +3406,7 @@
       document.body.classList.add("has-player");
       if (window.matchMedia("(max-width: 760px)").matches) openSongNowPlaying();
     }
-    audio.src = track.url;
+    audio.src = source;
     audio.preload = getAudioPreload();
     audio.playbackRate = Number(playbackSpeedSelect.value);
     audio.load();
@@ -3340,12 +3423,39 @@
     }
   };
 
-  const togglePlayback = () => {
-    if (!currentTrack()) return;
+  const togglePlayback = async () => {
+    const track = currentTrack();
+    if (!track) return;
     if (!requireLogin("play music")) return;
+    if (!canStreamTrack(track)) {
+      showToast("The artist has not enabled streaming for this song.");
+      return;
+    }
     if (audio.paused) {
       if (currentRadioStation) stopRadioStation();
-      audio.play().catch(() => showToast(audioPlaybackErrorMessage()));
+      const requestId = ++trackSelectionRequestId;
+      try {
+        const source = await getTrackAudioUrl(track);
+        if (requestId !== trackSelectionRequestId || !isLoggedIn) return;
+        if (source !== audio.src) {
+          const currentTime = audio.currentTime;
+          audio.addEventListener("loadedmetadata", () => {
+            if (Number.isFinite(currentTime) && currentTime > 0) {
+              const resumeTime = Number.isFinite(audio.duration) && audio.duration > 0
+                ? Math.min(currentTime, Math.max(0, audio.duration - 0.25))
+                : currentTime;
+              audio.currentTime = resumeTime;
+            }
+            audio.play().catch(() => showToast(audioPlaybackErrorMessage()));
+          }, { once: true });
+          audio.src = source;
+          audio.load();
+          return;
+        }
+        await audio.play();
+      } catch (error) {
+        showToast(error instanceof Error ? error.message : audioPlaybackErrorMessage());
+      }
     } else {
       audio.pause();
     }
@@ -3707,11 +3817,19 @@
   const downloadTrack = async (track, destination, triggerButton = null) => {
     if (triggerButton) triggerButton.disabled = true;
     try {
+      if (destination === "device" && track.allowDownloadToPhone === false) {
+        showToast("The artist has not enabled downloads to your device for this song.");
+        return;
+      }
+      if (destination === "offline" && track.allowOffline === false) {
+        showToast("The artist has not enabled offline listening for this song.");
+        return;
+      }
       await offlineTracksLoadPromise;
       const previousDownload = getOfflineDownloadForTrack(track);
       let blob = previousDownload?.offlineBlob;
       if (!blob) {
-        const source = track.isJamendo ? track.downloadUrl : track.url;
+        const source = track.isJamendo ? track.downloadUrl : await getTrackAudioUrl(track);
         if (!source) throw new Error("This song has no downloadable audio source.");
         const response = await fetch(source);
         if (!response.ok) throw new Error(`The song download failed (HTTP ${response.status}).`);
@@ -3827,90 +3945,73 @@
     const submitButton = creatorSongForm.querySelector('[type="submit"]');
     submitButton.disabled = true;
     submitButton.textContent = "Publishing…";
+    const uploadedObjects = [];
+    let songSaved = false;
     try {
+      if (!supabaseClient) throw new Error("Cloud publishing is unavailable. Check your connection and try again.");
       const embeddedCover = coverFile ? null : await readEmbeddedCover(file);
-      let audioUrl = URL.createObjectURL(file);
-      let coverUrl = coverFile ? URL.createObjectURL(coverFile) : embeddedCover;
-      let savedSong = null;
-
-      if (supabaseClient) {
-        try {
-          const [audioResult, coverResult] = await Promise.all([
-            uploadSongToSupabaseStorage(file, accountEmail, "music-files"),
-            coverFile ? uploadSongToSupabaseStorage(coverFile, accountEmail, "artist-covers") : Promise.resolve(null),
-          ]);
-          if (audioResult) audioUrl = audioResult;
-          if (coverResult) coverUrl = coverResult;
-          const songInsert = {
-            title,
-            artist,
-            artist_names: splitArtistCredits(artist),
-            owner_email: accountEmail,
-            upload_source: "web",
-            file_name: file.name,
-            audio_url: audioUrl,
-            cover_url: coverUrl,
-            release_type: (() => {
-              const selectedReleaseType = String(creatorFormData.get("releaseType") || "single");
-              if (selectedReleaseType === "mix") return "mix";
-              if (selectedReleaseType === "album") return "album";
-              return "single";
-            })(),
-            genre: creatorFormData.get("genre") === "auto" ? null : creatorFormData.get("genre"),
-            allow_streaming: creatorFormData.get("allowStreaming") !== "off",
-            allow_offline: creatorFormData.get("allowOffline") !== "off",
-            allow_download_to_phone: creatorFormData.get("allowDownloadToPhone") === "on",
-            allow_video_use: creatorFormData.get("allowVideoUse") === "on",
-            created_at: new Date().toISOString(),
-          };
-          savedSong = await publishSongToSupabase(songInsert);
-          if (savedSong) {
-            audioUrl = savedSong.audio_url || audioUrl;
-            coverUrl = savedSong.cover_url || coverUrl;
-          }
-        } catch (storageError) {
-          showToast(storageError instanceof Error ? `Cloud upload failed, so this song was saved locally only: ${storageError.message}` : "Cloud upload failed, so this song was saved locally only.");
-        }
-      }
-
-      const newTrack = {
-        id: `${file.name}-${file.size}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      const audioObject = await uploadSongToSupabaseStorage(file, accountEmail, "music-files");
+      uploadedObjects.push(audioObject);
+      const coverObject = coverFile
+        ? await uploadSongToSupabaseStorage(coverFile, accountEmail, "artist-covers")
+        : null;
+      if (coverObject) uploadedObjects.push(coverObject);
+      const songInsert = {
         title,
         artist,
-        artistNames: splitArtistCredits(artist),
-        ownerEmail: accountEmail,
-        fileName: file.name,
-        size: file.size,
-        releaseType: (() => {
+        artist_names: splitArtistCredits(artist),
+        owner_email: accountEmail,
+        upload_source: "web",
+        file_name: file.name,
+        audio_url: audioObject.url,
+        cover_url: coverObject?.url || embeddedCover,
+        release_type: (() => {
           const selectedReleaseType = String(creatorFormData.get("releaseType") || "single");
           if (selectedReleaseType === "mix") return "mix";
           if (selectedReleaseType === "album") return "album";
           return "single";
         })(),
-        genre: creatorFormData.get("genre") === "auto" ? "" : creatorFormData.get("genre"),
-        url: audioUrl,
-        duration: 0,
-        liked: false,
-        searches: 0,
-        downloads: 0,
-        plays: 0,
-        art: tracks.length % 5,
-        coverUrl,
-        allowStreaming: creatorFormData.get("allowStreaming") !== "off",
-        allowOffline: creatorFormData.get("allowOffline") !== "off",
-        allowDownloadToPhone: creatorFormData.get("allowDownloadToPhone") === "on",
-        allowVideoUse: creatorFormData.get("allowVideoUse") === "on",
+        genre: creatorFormData.get("genre") === "auto" ? null : creatorFormData.get("genre"),
+        allow_streaming: creatorFormData.has("allowStreaming"),
+        allow_offline: creatorFormData.has("allowOffline"),
+        allow_download_to_phone: creatorFormData.has("allowDownloadToPhone"),
+        allow_video_use: creatorFormData.has("allowVideoUse"),
+        created_at: new Date().toISOString(),
       };
-      tracks.push(savedSong
-        ? { ...mapSupabaseSongToTrack({ ...savedSong, ownerEmail: accountEmail }, tracks.length), size: file.size }
-        : newTrack);
-      if (savedSong) refreshSharedSongCatalog();
+      const savedSong = await publishSongToSupabase(songInsert);
+      if (!savedSong) throw new Error("The song was uploaded, but its catalog record was not saved.");
+      songSaved = true;
+      tracks.push({
+        ...mapSupabaseSongToTrack({ ...savedSong, ownerEmail: accountEmail }, tracks.length),
+        size: file.size,
+      });
+      refreshSharedSongCatalog();
       creatorSongForm.reset();
       creatorSongArtist.value = creatorName;
       creatorSongArtist.dataset.autoArtist = creatorName;
       creatorSongTitle.dataset.fileSuggestion = "";
       render();
       showToast("Song added to your catalog.");
+    } catch (error) {
+      const cleanupErrors = [];
+      if (!songSaved) {
+        for (const uploadedObject of uploadedObjects) {
+          try {
+            const { error: cleanupError } = await supabaseClient.storage
+              .from(uploadedObject.bucketName)
+              .remove([uploadedObject.path]);
+            if (cleanupError) throw cleanupError;
+          } catch (cleanupError) {
+            console.error(`Could not remove the incomplete ${uploadedObject.bucketName} upload.`, cleanupError);
+            cleanupErrors.push(cleanupError instanceof Error ? cleanupError.message : "unknown cleanup error");
+          }
+        }
+      }
+      const failureMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      const cleanupMessage = cleanupErrors.length
+        ? ` Some uploaded files could not be removed: ${cleanupErrors.join("; ")}.`
+        : "";
+      showToast(`${songSaved ? "Song was published, but the page could not update" : "Could not publish song"}: ${failureMessage}.${cleanupMessage}`);
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = "＋ Publish song";
@@ -3996,6 +4097,8 @@
   };
 
   const logOut = async () => {
+    trackSelectionRequestId += 1;
+    if (crossfadeRequestPending) stopCrossfade();
     if (supabaseClient) {
       try {
         await supabaseClient.auth.signOut();
