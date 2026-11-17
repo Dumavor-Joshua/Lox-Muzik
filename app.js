@@ -182,6 +182,54 @@
     });
     return Array.from(songsById.values());
   };
+  const loadGlobalTrendPlayCounts = async () => {
+    if (!supabaseClient || isRefreshingGlobalTrendCounts) return;
+    isRefreshingGlobalTrendCounts = true;
+    try {
+      const { data, error } = await supabaseClient.rpc("get_trending_song_plays");
+      if (error) throw error;
+      globalTrendPlayCounts.clear();
+      (Array.isArray(data) ? data : []).forEach((row) => {
+        const count = Number(row.play_count);
+        if (row.song_id && Number.isFinite(count) && count > 0) {
+          globalTrendPlayCounts.set(String(row.song_id), count);
+        }
+      });
+      tracks.forEach((track) => {
+        if (!track.isSupabaseTrack) return;
+        track.globalPlays = globalTrendPlayCounts.get(track.id.slice("supabase-".length)) || 0;
+      });
+    } finally {
+      isRefreshingGlobalTrendCounts = false;
+    }
+  };
+  const reportTrendStatsError = (error) => {
+    console.error("Could not update shared trend activity.", error);
+    if (hasReportedTrendStatsError) return;
+    hasReportedTrendStatsError = true;
+    showToast("Shared trends need the latest Supabase setup. Run supabase/song-library.sql in the Supabase SQL Editor.");
+  };
+  const recordGlobalSongPlay = async (track) => {
+    if (!supabaseClient || !isLoggedIn || !track?.isSupabaseTrack) return;
+    const songId = track.id.slice("supabase-".length);
+    const { data, error } = await supabaseClient.rpc("record_song_play", { p_song_id: songId });
+    if (error) throw error;
+    const playCount = Number(data);
+    if (!Number.isFinite(playCount) || playCount < 0) {
+      throw new Error("Supabase returned an invalid shared play count.");
+    }
+    globalTrendPlayCounts.set(songId, playCount);
+    track.globalPlays = playCount;
+    render();
+  };
+  const refreshGlobalTrendCounts = async () => {
+    try {
+      await loadGlobalTrendPlayCounts();
+      render();
+    } catch (error) {
+      reportTrendStatsError(error);
+    }
+  };
   const mapSupabaseSongToTrack = (song, index) => {
     const artistNames = (Array.isArray(song.artist_names) && song.artist_names.length
       ? song.artist_names
@@ -204,6 +252,7 @@
       searches: Number(song.searches) || 0,
       downloads: Number(song.downloads) || 0,
       plays: Number(song.plays) || 0,
+      globalPlays: globalTrendPlayCounts.get(String(song.id)) || 0,
       art: index % 5,
       coverUrl: song.cover_url || null,
       allowStreaming: song.allow_streaming !== false,
@@ -219,6 +268,11 @@
     try {
       const songs = await loadSupabaseSongs();
       if (requestId !== sharedSongCatalogRequestId) return;
+      try {
+        await loadGlobalTrendPlayCounts();
+      } catch (error) {
+        reportTrendStatsError(error);
+      }
       const cloudTracks = await Promise.all(songs
         .map(mapSupabaseSongToTrack)
         .filter((track) => track.url || track.storagePath)
@@ -346,6 +400,9 @@
   const playlistLinks = document.querySelector("#playlist-links");
   const tracks = [];
   const offlineTracks = [];
+  const globalTrendPlayCounts = new Map();
+  let isRefreshingGlobalTrendCounts = false;
+  let hasReportedTrendStatsError = false;
   let pendingDownloadRequest = null;
   let offlineDatabasePromise = null;
   let offlineTracksLoadPromise = Promise.resolve();
@@ -772,6 +829,18 @@
     songNowCurrent: document.querySelector("#song-now-current"),
     songNowDuration: document.querySelector("#song-now-duration"),
     songNowSeek: document.querySelector("#song-now-seek"),
+  };
+  let playbackRequested = false;
+  const setPlaybackLoading = (isLoading) => {
+    [elements.playButton, elements.songNowPlay].forEach((button) => {
+      button.classList.toggle("is-loading", isLoading);
+      button.setAttribute("aria-busy", String(isLoading));
+      const label = isLoading ? "Loading song" : audio.paused ? "Play" : "Pause";
+      button.setAttribute("aria-label", label);
+      button.title = label;
+    });
+    elements.playerBar.setAttribute("aria-busy", String(isLoading));
+    elements.playerBar.classList.toggle("is-loading", isLoading);
   };
   const setPlayerBarVisibility = (isVisible) => {
     elements.playerBar.hidden = !isVisible;
@@ -1265,6 +1334,9 @@
     if (!writeStoredValue("loxMuzikTrackPlays", Object.fromEntries(trackPlayCounts))) {
       console.error("Could not save song play counts.");
     }
+    if (track.isSupabaseTrack && isLoggedIn) {
+      recordGlobalSongPlay(track).catch(reportTrendStatsError);
+    }
   };
   const songGenreDefinitions = [
     { genre: "Afrobeats", category: "African Music", aliases: ["Afrobeat", "Afro beats"] },
@@ -1569,11 +1641,7 @@
       - getDailyHash(`${recommendationDay}:${second.name}`)
     )).slice(0, 5);
   };
-  const trendScore = (track) => (
-    (Number(track.downloads) || 0) * 3
-    + (Number(track.plays) || 0) * 2
-    + (Number(track.searches) || 0)
-  );
+  const trendScore = (track) => Number(track.globalPlays) || 0;
   const normalizeReleaseType = (value) => {
     const normalized = String(value ?? "").trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
     if (!normalized || normalized === "single" || normalized === "song") return "single";
@@ -1964,6 +2032,8 @@
       return;
     }
 
+    playbackRequested = false;
+    setPlaybackLoading(false);
     audio.pause();
     setPlayerBarVisibility(false);
     document.body.classList.remove("has-player");
@@ -2096,7 +2166,7 @@
       copy.append(title, artist);
       const score = document.createElement("span");
       score.className = "creator-track-trend-score";
-      score.textContent = `${trendScore(track)} points · ${Number(track.plays) || 0} plays · ${Number(track.searches) || 0} searches · ${Number(track.downloads) || 0} downloads`;
+      score.textContent = `${trendScore(track)} unique listener ${trendScore(track) === 1 ? "play" : "plays"} in the last 30 days`;
       const play = document.createElement("button");
       play.className = "artist-action-button";
       play.type = "button";
@@ -2311,6 +2381,8 @@
 
     if (currentTrackId === track.id) {
       if (crossfadeInProgress || crossfadeRequestPending) stopCrossfade();
+      playbackRequested = false;
+      setPlaybackLoading(false);
       audio.pause();
       audio.removeAttribute("src");
       audio.load();
@@ -2936,7 +3008,7 @@
     const trendingTracks = trendCatalog;
     trendingGrid.replaceChildren();
     const trendCount = trendingTracks.length;
-    trendOffset %= trendCount;
+    trendOffset = trendCount ? ((trendOffset % trendCount) + trendCount) % trendCount : 0;
     const visibleCount = Math.min(5, trendCount);
     const firstPosition = -Math.floor((visibleCount - 1) / 2);
     Array.from({ length: visibleCount }, (_, index) => firstPosition + index).forEach((position) => {
@@ -2986,11 +3058,11 @@
         .some((artistName) => normalizeArtistKey(artistName) === creatorArtistKey))
       : trendingTracks;
     document.querySelector("#trend-chart-description").textContent = isCreatorAccount
-      ? `${chartTracks.length} songs credited to ${creatorName}, filed under your artist profile. Embedded song covers appear first; artist artwork fills in when a song has no cover.`
-      : `${chartTracks.length} songs from your music folder and creator uploads, filed under their credited artists. Embedded song covers appear first; artist artwork fills in when a song has no cover.`;
+      ? `${chartTracks.length} songs credited to ${creatorName}, ranked by unique signed-in listener plays in the last 30 days.`
+      : `${chartTracks.length} songs ranked automatically by unique signed-in listener plays in the last 30 days.`;
     document.querySelector("#trend-chart-status").textContent = isCreatorAccount
       ? `${creatorName.toLocaleUpperCase()} · ${chartTracks.length} TRACKS`
-      : `YOUR FILES · ${chartTracks.length} TRACKS`;
+      : `ALL LISTENERS · ${chartTracks.length} TRACKS`;
     trendChartList.replaceChildren();
     if (!chartTracks.length) {
       const empty = document.createElement("p");
@@ -3253,6 +3325,8 @@
       setPlayerBarVisibility(true);
       document.body.classList.add("has-player");
       crossfadeInProgress = true;
+      playbackRequested = true;
+      setPlaybackLoading(false);
       crossfadeProgress = 0;
       recordTrackPlay(track);
       const previousPlayIndex = playedTrackIds.indexOf(currentTrackId);
@@ -3384,17 +3458,23 @@
       startCrossfade(track, queue);
       return;
     }
+    playbackRequested = shouldPlay;
+    setPlaybackLoading(shouldPlay);
     let source;
     try {
       source = await getTrackAudioUrl(track);
     } catch (error) {
       if (requestId === trackSelectionRequestId) {
+        playbackRequested = false;
+        setPlaybackLoading(false);
         showToast(error instanceof Error ? error.message : "Could not prepare this song for playback.");
       }
       return;
     }
     if (requestId !== trackSelectionRequestId) return;
     if (!source) {
+      playbackRequested = false;
+      setPlaybackLoading(false);
       showToast("This song has no playable audio source.");
       return;
     }
@@ -3419,7 +3499,11 @@
     updatePlayer();
     render();
     if (shouldPlay) {
-      audio.play().catch(() => showToast(audioPlaybackErrorMessage()));
+      audio.play().catch(() => {
+        playbackRequested = false;
+        setPlaybackLoading(false);
+        showToast(audioPlaybackErrorMessage());
+      });
     }
   };
 
@@ -3433,6 +3517,8 @@
     }
     if (audio.paused) {
       if (currentRadioStation) stopRadioStation();
+      playbackRequested = true;
+      setPlaybackLoading(true);
       const requestId = ++trackSelectionRequestId;
       try {
         const source = await getTrackAudioUrl(track);
@@ -3446,7 +3532,11 @@
                 : currentTime;
               audio.currentTime = resumeTime;
             }
-            audio.play().catch(() => showToast(audioPlaybackErrorMessage()));
+            audio.play().catch(() => {
+              playbackRequested = false;
+              setPlaybackLoading(false);
+              showToast(audioPlaybackErrorMessage());
+            });
           }, { once: true });
           audio.src = source;
           audio.load();
@@ -3454,9 +3544,13 @@
         }
         await audio.play();
       } catch (error) {
+        playbackRequested = false;
+        setPlaybackLoading(false);
         showToast(error instanceof Error ? error.message : audioPlaybackErrorMessage());
       }
     } else {
+      playbackRequested = false;
+      setPlaybackLoading(false);
       audio.pause();
     }
   };
@@ -4128,6 +4222,8 @@
     if (crossfadeInProgress || crossfadeRequestPending) stopCrossfade();
     const ownedTrackIds = new Set(tracks.filter((track) => track.ownerEmail === email).map((track) => track.id));
     if (ownedTrackIds.has(currentTrackId)) {
+      playbackRequested = false;
+      setPlaybackLoading(false);
       audio.pause();
       audio.removeAttribute("src");
       audio.load();
@@ -4863,6 +4959,7 @@
   });
   document.addEventListener("visibilitychange", () => {
     updateScreenWakeLock().catch((error) => showToast(error instanceof Error ? error.message : "Could not update the screen lock."));
+    if (!document.hidden) refreshGlobalTrendCounts();
   });
   autoplayNextToggle.addEventListener("change", () => {
     autoplayNext.enabled = autoplayNextToggle.checked;
@@ -4913,7 +5010,20 @@
       elements.songNowPlay.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>';
       elements.songNowPlay.setAttribute("aria-label", "Pause");
       elements.songNowPlay.title = "Pause";
+      setPlaybackLoading(true);
       updateScreenWakeLock().catch((error) => showToast(error instanceof Error ? error.message : "Could not keep the screen awake."));
+    });
+    ["loadstart", "waiting", "stalled"].forEach((eventName) => {
+      player.addEventListener(eventName, () => {
+        if (player === audio && currentTrack() && (playbackRequested || !player.paused)) {
+          setPlaybackLoading(true);
+        }
+      });
+    });
+    player.addEventListener("playing", () => {
+      if (player !== audio) return;
+      playbackRequested = true;
+      setPlaybackLoading(false);
     });
     player.addEventListener("pause", () => {
       if (player !== audio) return;
@@ -4923,6 +5033,7 @@
       elements.songNowPlay.setAttribute("aria-label", "Play");
       elements.playButton.setAttribute("aria-label", "Play");
       elements.playButton.title = "Play";
+      setPlaybackLoading(playbackRequested);
       updateScreenWakeLock().catch((error) => showToast(error instanceof Error ? error.message : "Could not release the screen lock."));
       render();
     });
@@ -4958,14 +5069,25 @@
     player.addEventListener("ended", () => {
       if (player !== audio) return;
       if (repeatModeSelect.value === "one" && currentTrack()) {
+        playbackRequested = true;
+        setPlaybackLoading(true);
         player.currentTime = 0;
-        player.play().catch(() => showToast(audioPlaybackErrorMessage()));
+        player.play().catch(() => {
+          playbackRequested = false;
+          setPlaybackLoading(false);
+          showToast(audioPlaybackErrorMessage());
+        });
         return;
       }
+      playbackRequested = false;
+      setPlaybackLoading(false);
       if (repeatModeSelect.value === "all" || autoplayNext.enabled) moveTrack(1);
     });
     player.addEventListener("error", () => {
-      if (player === audio && currentTrack()) showToast(audioPlaybackErrorMessage());
+      if (player !== audio) return;
+      playbackRequested = false;
+      setPlaybackLoading(false);
+      if (currentTrack()) showToast(audioPlaybackErrorMessage());
     });
   });
   progress.addEventListener("input", () => {
@@ -4993,6 +5115,9 @@
     const itemCount = getReleaseTracks().length;
     if (itemCount > 1) moveTrend(1);
   }, 4500);
+  window.setInterval(() => {
+    if (!document.hidden) refreshGlobalTrendCounts();
+  }, 5 * 60 * 1000);
   window.setInterval(() => {
     if (browseView.hidden || document.hidden || document.body.classList.contains("reduce-motion")) return;
     setWelcomeSlide(welcomeSlideIndex + 1);

@@ -791,11 +791,11 @@
               <h2 id="creator-trending-title">Your trending songs</h2>
             </div>
           </div>
-          <p class="creator-note">Listener activity updates this list automatically. Downloads count for 3 points, plays
-            for 2, and searches for 1. Songs with the most activity appear first.</p>
+          <p class="creator-note">This list updates automatically from signed-in listener plays. Each listener counts
+            once per song per day; songs are ranked by unique plays from the last 30 days.</p>
           <div id="creator-trending-list" class="creator-track-list" aria-live="polite"></div>
-          <p id="creator-trending-empty" class="creator-empty-copy">New uploads are tracked automatically and appear
-            here when listeners start playing, searching for, or downloading them.</p>
+          <p id="creator-trending-empty" class="creator-empty-copy">Your songs appear here when signed-in listeners
+            start playing them.</p>
         </section>
 
         <section class="creator-panel creator-songs-panel" aria-labelledby="creator-songs-title">
@@ -1026,12 +1026,12 @@
         <section class="trend-chart" aria-labelledby="trend-chart-title">
           <div class="trend-chart-heading">
             <div>
-              <p class="eyebrow">YOUR MUSIC COLLECTION</p>
-              <h2 id="trend-chart-title">Everyday song, just for you</h2>
-              <p id="trend-chart-description">Your songs are grouped by their credited artists.</p>
+              <p class="eyebrow">TRENDING ACROSS LISTENERS</p>
+              <h2 id="trend-chart-title">Popular in the last 30 days</h2>
+              <p id="trend-chart-description">Songs are ranked by unique signed-in listener plays.</p>
             </div>
             <span class="trend-chart-live"><span class="live-dot" aria-hidden="true"></span><span
-                id="trend-chart-status">YOUR MUSIC</span></span>
+                id="trend-chart-status">ALL LISTENERS</span></span>
           </div>
           <div id="trend-chart-list" class="trend-chart-list"></div>
           <button id="trend-chart-more" class="text-link trend-chart-more" type="button" hidden>View more ↓</button>
@@ -1272,7 +1272,7 @@
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=song-permissions-1"></script>
+  <script src="app.js?v=shared-trends-1"></script>
 </body>
 
 </html>

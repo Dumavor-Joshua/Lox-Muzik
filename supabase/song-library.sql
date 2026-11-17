@@ -103,6 +103,80 @@ $function$;
 revoke all on function public.get_my_songs() from public, anon;
 grant execute on function public.get_my_songs() to authenticated;
 
+create table if not exists public.song_play_events (
+  song_id uuid not null references public.songs(id) on delete cascade,
+  listener_id uuid not null references auth.users(id) on delete cascade,
+  played_on date not null,
+  played_at timestamptz not null default now(),
+  primary key (song_id, listener_id, played_on)
+);
+
+create index if not exists song_play_events_song_played_at_idx
+  on public.song_play_events (song_id, played_at desc);
+
+alter table public.song_play_events enable row level security;
+revoke all on table public.song_play_events from anon, authenticated;
+
+create or replace function public.record_song_play(p_song_id uuid)
+returns bigint
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  listener_id uuid := (select auth.uid());
+  play_count bigint;
+begin
+  if listener_id is null then
+    raise exception 'Sign in to record listening activity'
+      using errcode = '28000';
+  end if;
+
+  if not exists (
+    select 1
+    from public.songs as song
+    where song.id = p_song_id
+      and song.allow_streaming
+  ) then
+    raise exception 'Song is not available for streaming'
+      using errcode = '22023';
+  end if;
+
+  insert into public.song_play_events (song_id, listener_id, played_on)
+  values (p_song_id, listener_id, (now() at time zone 'UTC')::date)
+  on conflict (song_id, listener_id, played_on) do nothing;
+
+  select count(*) into play_count
+  from public.song_play_events as event
+  where event.song_id = p_song_id
+    and event.played_at >= now() - interval '30 days';
+
+  return play_count;
+end;
+$function$;
+
+revoke all on function public.record_song_play(uuid) from public, anon;
+grant execute on function public.record_song_play(uuid) to authenticated;
+
+create or replace function public.get_trending_song_plays()
+returns table (song_id uuid, play_count bigint)
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select event.song_id, count(*)::bigint as play_count
+  from public.song_play_events as event
+  join public.songs as song on song.id = event.song_id
+  where event.played_at >= now() - interval '30 days'
+    and song.allow_streaming
+  group by event.song_id
+  order by play_count desc, event.song_id;
+$function$;
+
+revoke all on function public.get_trending_song_plays() from public;
+grant execute on function public.get_trending_song_plays() to anon, authenticated;
+
 insert into storage.buckets (id, name, public)
 values
   ('music-files', 'music-files', false),
