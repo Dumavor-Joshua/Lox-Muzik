@@ -7262,10 +7262,55 @@ body.reduce-motion *::after {
 }
 
 .player-transport #play-button {
+  position: relative;
   width: 42px;
   height: 42px;
   border: 2px solid rgba(255, 255, 255, .9);
   font-size: 18px;
+}
+
+.player-transport #play-button.is-loading,
+#song-now-play.is-loading {
+  color: transparent;
+}
+
+.player-transport #play-button.is-loading::after,
+#song-now-play.is-loading::after {
+  position: absolute;
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, .9);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: player-loading-spin .8s linear infinite;
+  content: "";
+}
+
+#song-now-play {
+  position: relative;
+}
+
+#song-now-play.is-loading svg {
+  visibility: hidden;
+}
+
+#song-now-play.is-loading::after {
+  width: 23px;
+  height: 23px;
+}
+
+@keyframes player-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .player-transport #play-button.is-loading::after,
+  #song-now-play.is-loading::after {
+    animation: none;
+    border-top-color: rgba(255, 255, 255, .9);
+  }
 }
 
 .player-progress {
