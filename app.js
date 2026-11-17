@@ -197,11 +197,18 @@
   const loadSupabaseSongs = async () => {
     if (!supabaseClient) return [];
     const songColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,release_id,release_title,track_number,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
-    const { data: publicSongs, error: publicError } = await supabaseClient
+    const legacySongColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
+    const fetchPublicSongs = (columns) => supabaseClient
       .from("songs")
-      .select(songColumns)
+      .select(columns)
       .eq("allow_streaming", true)
       .order("created_at", { ascending: false });
+    let { data: publicSongs, error: publicError } = await fetchPublicSongs(songColumns);
+    if (publicError?.code === "42703"
+      && ["release_id", "release_title", "track_number"].some((column) => publicError.message?.includes(column))) {
+      console.warn("Release metadata is not installed yet. Run supabase/song-library.sql to enable grouped releases.");
+      ({ data: publicSongs, error: publicError } = await fetchPublicSongs(legacySongColumns));
+    }
     if (publicError) throw publicError;
 
     let ownedSongs = [];
