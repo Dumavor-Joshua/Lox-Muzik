@@ -93,10 +93,8 @@ input:focus-visible {
   color: #d778f2;
 }
 
-.email-confirmation-icon svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+.email-confirmation-icon .fa-icon {
+  font-size: 58px;
 }
 
 .email-confirmation-kicker {
@@ -1685,10 +1683,8 @@ input:focus-visible {
   color: #e4d8ec;
 }
 
-.nav-icon svg {
-  display: block;
-  width: 20px;
-  height: 20px;
+.nav-icon .fa-icon {
+  font-size: 18px;
 }
 
 .sidebar-bottom {
@@ -4667,9 +4663,8 @@ input:focus-visible {
   place-items: center;
 }
 
-.download-control svg {
-  width: 18px;
-  height: 18px;
+.download-control .fa-icon {
+  font-size: 18px;
 }
 
 .play-button {
@@ -5123,19 +5118,6 @@ input:focus-visible {
     color: #9d8cad;
     cursor: pointer;
     font-size: 9px;
-  }
-
-  .mobile-nav-link>span {
-    display: grid;
-    width: 23px;
-    height: 23px;
-    place-items: center;
-  }
-
-  .mobile-nav-link svg {
-    display: block;
-    width: 21px;
-    height: 21px;
   }
 
   .mobile-nav-link.is-active {
@@ -5851,9 +5833,8 @@ input:focus-visible {
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
-.topbar-icon-button svg {
-  width: 21px;
-  height: 21px;
+.topbar-icon-button .fa-icon {
+  font-size: 20px;
 }
 
 .topbar-icon-button:hover,
@@ -5885,8 +5866,7 @@ input:focus-visible {
 }
 
 .profile-button-icon {
-  width: 21px;
-  height: 21px;
+  font-size: 20px;
 }
 
 .profile-button-label {
@@ -6631,9 +6611,8 @@ body.monochrome-theme .toast {
     height: 34px;
   }
 
-  .topbar-icon-button svg {
-    width: 18px;
-    height: 18px;
+  .topbar-icon-button .fa-icon {
+    font-size: 17px;
   }
 
   .profile-button {
@@ -6644,8 +6623,7 @@ body.monochrome-theme .toast {
   }
 
   .profile-button .profile-button-icon {
-    width: 19px;
-    height: 19px;
+    font-size: 18px;
   }
 
   .home-welcome-hero {
@@ -7021,22 +6999,25 @@ body.reduce-motion *::after {
 
 /* Mobile full-screen song player inspired by the supplied reference */
 .song-now-playing {
-  display: none
+  display: none;
 }
 
-@media(max-width:760px) {
+@media (max-width: 760px) {
   .song-now-playing {
     position: fixed;
     z-index: 80;
     inset: 0;
     overflow-y: auto;
     padding: calc(14px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));
-    background: radial-gradient(ellipse at 82% 8%, rgba(203, 82, 238, .2), transparent 34rem), radial-gradient(ellipse at 12% 42%, rgba(244, 95, 201, .1), transparent 30rem), var(--bg);
-    color: var(--text)
+    background:
+      radial-gradient(ellipse at 82% 8%, rgba(203, 82, 238, .2), transparent 34rem),
+      radial-gradient(ellipse at 12% 42%, rgba(244, 95, 201, .1), transparent 30rem),
+      var(--bg);
+    color: var(--text);
   }
 
   .song-now-playing.is-open {
-    display: block
+    display: block;
   }
 
   .song-now-header {
@@ -7044,7 +7025,7 @@ body.reduce-motion *::after {
     align-items: center;
     justify-content: space-between;
     height: 42px;
-    margin-bottom: 18px
+    margin-bottom: 18px;
   }
 
   .song-now-header button,
@@ -7055,35 +7036,29 @@ body.reduce-motion *::after {
     border: 0;
     background: transparent;
     color: var(--muted);
-    cursor: pointer
+    cursor: pointer;
   }
 
   .song-now-header button {
     width: 38px;
-    height: 38px
+    height: 38px;
   }
 
-  .song-now-header button svg {
-    width: 24px;
-    height: 24px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round
+  .song-now-header button .fa-icon {
+    font-size: 20px;
   }
 
   .song-now-header span {
     font-size: 10px;
     font-weight: 800;
     letter-spacing: .18em;
-    color: var(--muted)
+    color: var(--muted);
   }
 
   .song-now-art-wrap {
     width: min(100%, min(78vw, 390px));
     aspect-ratio: 1;
-    margin: 0 auto 20px
+    margin: 0 auto 20px;
   }
 
   .song-now-art-wrap .mini-art {
@@ -7092,13 +7067,13 @@ body.reduce-motion *::after {
     border: 1px solid var(--line);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, .32)
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .32);
   }
 
   .song-now-art-wrap .mini-art img {
     width: 100%;
     height: 100%;
-    object-fit: cover
+    object-fit: cover;
   }
 
   .song-now-heading {
@@ -7106,35 +7081,29 @@ body.reduce-motion *::after {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin: 10px 0 14px
+    margin: 10px 0 14px;
   }
 
   .song-now-heading h1 {
     margin: 0;
     font-family: var(--font-display);
     font-size: 23px;
-    letter-spacing: -.035em
+    letter-spacing: -.035em;
   }
 
   .song-now-heading p {
     margin: 5px 0 0;
     color: var(--muted);
-    font-size: 14px
+    font-size: 14px;
   }
 
   .song-now-heading button {
     width: 42px;
-    height: 42px
+    height: 42px;
   }
 
-  .song-now-heading button svg {
-    width: 25px;
-    height: 25px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round
+  .song-now-heading button .fa-icon {
+    font-size: 21px;
   }
 
   .song-now-lyrics {
@@ -7144,7 +7113,7 @@ body.reduce-motion *::after {
     min-height: 32px;
     margin: 10px 0 24px;
     color: var(--muted);
-    font-size: 12px
+    font-size: 12px;
   }
 
   .song-now-lyrics span {
@@ -7154,15 +7123,15 @@ body.reduce-motion *::after {
     background: rgba(203, 82, 238, .14);
     color: #e9b5fa;
     font-size: 10px;
-    font-weight: 800
+    font-weight: 800;
   }
 
   .song-now-lyrics p {
-    margin: 0
+    margin: 0;
   }
 
   .song-now-progress {
-    margin-top: 10px
+    margin-top: 10px;
   }
 
   .song-now-times {
@@ -7170,12 +7139,12 @@ body.reduce-motion *::after {
     justify-content: space-between;
     color: var(--muted);
     font-size: 11px;
-    font-variant-numeric: tabular-nums
+    font-variant-numeric: tabular-nums;
   }
 
   .song-now-progress input {
     width: 100%;
-    accent-color: var(--purple)
+    accent-color: var(--purple);
   }
 
   .song-now-controls {
@@ -7183,23 +7152,17 @@ body.reduce-motion *::after {
     align-items: center;
     justify-content: space-between;
     margin: 17px 0 26px;
-    gap: 8px
+    gap: 8px;
   }
 
   .song-now-controls button {
     width: 40px;
     height: 44px;
-    padding: 8px
+    padding: 8px;
   }
 
-  .song-now-controls button svg {
-    width: 23px;
-    height: 23px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.9;
-    stroke-linecap: round;
-    stroke-linejoin: round
+  .song-now-controls button .fa-icon {
+    font-size: 20px;
   }
 
   #song-now-play {
@@ -7209,13 +7172,11 @@ body.reduce-motion *::after {
     border-radius: 50%;
     background: linear-gradient(135deg, var(--purple), var(--pink));
     color: #fff;
-    box-shadow: 0 8px 26px rgba(203, 82, 238, .28)
+    box-shadow: 0 8px 26px rgba(203, 82, 238, .28);
   }
 
-  #song-now-play svg {
-    width: 25px;
-    height: 25px;
-    stroke-width: 2.2
+  #song-now-play .fa-icon {
+    font-size: 22px;
   }
 
   .song-now-info {
@@ -7223,25 +7184,25 @@ body.reduce-motion *::after {
     border: 1px solid var(--line);
     border-radius: 18px;
     background: var(--surface-raised);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, .2)
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .2);
   }
 
   .song-now-info h2 {
     margin: 0 0 18px;
     font-family: var(--font-display);
-    font-size: 16px
+    font-size: 16px;
   }
 
   .song-now-info dl {
     display: grid;
     gap: 6px;
-    margin: 0
+    margin: 0;
   }
 
   .song-now-info dt {
     margin-top: 8px;
     color: var(--muted);
-    font-size: 12px
+    font-size: 12px;
   }
 
   .song-now-info dd {
@@ -7249,16 +7210,16 @@ body.reduce-motion *::after {
     color: var(--text);
     font-size: 14px;
     font-weight: 700;
-    overflow-wrap: anywhere
+    overflow-wrap: anywhere;
   }
 
   body:has(.song-now-playing.is-open) {
-    overflow: hidden
+    overflow: hidden;
   }
 
   body:has(.song-now-playing.is-open) .player-bar,
   body:has(.song-now-playing.is-open) .mobile-nav {
-    visibility: hidden
+    visibility: hidden;
   }
 }
 
@@ -7625,14 +7586,8 @@ body.reduce-motion *::after {
     -webkit-tap-highlight-color: transparent;
   }
 
-  .mobile-nav-link>span {
-    width: 23px;
-    height: 23px;
-  }
-
-  .mobile-nav-link svg {
-    width: 21px;
-    height: 21px;
+  .mobile-nav-link>.fa-icon {
+    font-size: 21px;
   }
 
   .mobile-nav-link small {
@@ -8041,14 +7996,14 @@ body.creator-mode .search-container {
   }
 }
 
-/* Supabase social sign-in controls — matching Lox-Muzik's existing theme */
+/* Sign-in buttons */
 .social-auth-divider {
   display: flex;
   align-items: center;
   gap: 12px;
   margin: 18px 0 12px;
   color: var(--muted);
-  font-size: 12px
+  font-size: 12px;
 }
 
 .social-auth-divider:before,
@@ -8056,13 +8011,13 @@ body.creator-mode .search-container {
   content: "";
   height: 1px;
   flex: 1;
-  background: var(--line)
+  background: var(--line);
 }
 
 .social-auth-buttons {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px
+  gap: 10px;
 }
 
 .social-auth-button {
@@ -8079,23 +8034,23 @@ body.creator-mode .search-container {
   font: inherit;
   font-weight: 700;
   cursor: pointer;
-  transition: border-color .16s, background .16s
+  transition: border-color .16s, background .16s;
 }
 
 .social-auth-button:hover {
   border-color: var(--purple);
-  background: rgba(203, 82, 238, .08)
+  background: rgba(203, 82, 238, .08);
 }
 
 .google-mark {
   font-size: 19px;
   font-weight: 800;
-  color: #4285f4
+  color: #4285f4;
 }
 
 .apple-mark {
   font-size: 17px;
-  color: var(--text)
+  color: var(--text);
 }
 
 .social-auth-message {
@@ -8103,5 +8058,5 @@ body.creator-mode .search-container {
   margin: 8px 0 0;
   color: var(--muted);
   font-size: 12px;
-  text-align: center
+  text-align: center;
 }

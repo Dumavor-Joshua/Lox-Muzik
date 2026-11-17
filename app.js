@@ -1,4 +1,37 @@
 (() => {
+  const iconClasses = {
+    music: "fa-solid fa-music",
+    play: "fa-solid fa-play",
+    pause: "fa-solid fa-pause",
+    heart: "fa-solid fa-heart",
+    heartOutline: "fa-regular fa-heart",
+    users: "fa-solid fa-users",
+    userGroup: "fa-solid fa-user-group",
+    compactDisc: "fa-solid fa-compact-disc",
+    shuffle: "fa-solid fa-shuffle",
+    radio: "fa-solid fa-tower-broadcast",
+    user: "fa-solid fa-user",
+    remove: "fa-solid fa-xmark",
+    follow: "fa-solid fa-user-plus",
+    download: "fa-solid fa-download",
+    check: "fa-solid fa-check",
+    plus: "fa-solid fa-plus",
+    external: "fa-solid fa-arrow-up-right-from-square",
+    retry: "fa-solid fa-rotate-right",
+    spinner: "fa-solid fa-spinner",
+    ellipsis: "fa-solid fa-ellipsis",
+    chevronDown: "fa-solid fa-chevron-down",
+  };
+  const createIcon = (name) => {
+    const icon = document.createElement("i");
+    icon.className = `${iconClasses[name]} fa-icon`;
+    icon.setAttribute("aria-hidden", "true");
+    return icon;
+  };
+  const setIconContent = (element, name, label = "") => {
+    element.replaceChildren(createIcon(name));
+    if (label) element.append(document.createTextNode(` ${label}`));
+  };
   const authPage = document.querySelector("#auth-page");
   const emailConfirmationPage = document.querySelector("#email-confirmation-page");
   const emailConfirmationTitle = document.querySelector("#email-confirmation-title");
@@ -478,7 +511,7 @@
       kicker: "WELCOME TO",
       title: "Lox-Muzik",
       description: "Your home for the best music, trending sounds, artists and more.",
-      actionLabel: "▶  Start Listening",
+      actionLabel: "Start Listening",
       action: "play",
     },
     {
@@ -945,7 +978,8 @@
     welcomeKicker.textContent = slide.kicker;
     welcomeTitle.textContent = slide.title;
     welcomeDescription.textContent = slide.description;
-    welcomeAction.textContent = slide.actionLabel;
+    if (slide.action === "play") setIconContent(welcomeAction, "play", slide.actionLabel);
+    else welcomeAction.textContent = slide.actionLabel;
     welcomeSlideDots.forEach((button) => {
       const isActive = Number(button.dataset.welcomeSlide) === welcomeSlideIndex;
       button.classList.toggle("is-active", isActive);
@@ -964,6 +998,42 @@
     if (!shouldOpen) return;
     panel.hidden = false;
     button.setAttribute("aria-expanded", "true");
+  };
+
+  const renderNotificationItems = (container, notifications) => {
+    container.replaceChildren();
+    notifications.slice().reverse().forEach((notification) => {
+      const item = document.createElement("article");
+      item.className = `notification-item${notification.read ? "" : " is-unread"}`;
+      const icon = document.createElement("span");
+      icon.className = "notification-item-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = notification.type === "follow" ? "\u265F" : "\u2665";
+      const copy = document.createElement("div");
+      copy.className = "notification-item-copy";
+      const message = document.createElement("p");
+      const actor = document.createElement("strong");
+      actor.textContent = notification.actorName || "A listener";
+      message.append(actor);
+      message.append(document.createTextNode(notification.type === "follow"
+        ? " followed your artist profile."
+        : notification.type === "artist-like"
+          ? " liked your artist profile."
+          : ` liked "${notification.trackTitle || "your song"}".`));
+      const details = document.createElement("small");
+      const timestamp = notification.createdAt
+        ? new Date(notification.createdAt).toLocaleString()
+        : "Recently";
+      const activityLabel = notification.type === "follow"
+        ? "New follower"
+        : notification.type === "artist-like"
+          ? "New artist like"
+          : notification.artistName || "Your artist profile";
+      details.textContent = `${activityLabel} - ${timestamp}`;
+      copy.append(message, details);
+      item.append(icon, copy);
+      container.append(item);
+    });
   };
 
   const renderCreatorProfileActivity = () => {
@@ -1001,7 +1071,7 @@
         ? " followed your artist profile."
         : notification.type === "artist-like"
           ? " liked your artist profile."
-          : ` liked "${notification.trackTitle || "your song"}".`));
+          : ` liked “${notification.trackTitle || "your song"}”.`));
       const details = document.createElement("small");
       const timestamp = notification.createdAt
         ? new Date(notification.createdAt).toLocaleString()
@@ -1011,7 +1081,7 @@
         : notification.type === "artist-like"
           ? "New artist like"
           : notification.artistName || "Your artist profile";
-      details.textContent = `${activityLabel} - ${timestamp}`;
+      details.textContent = `${activityLabel} · ${timestamp}`;
       copy.append(message, details);
       item.append(icon, copy);
       artistProfileActivityList.append(item);
@@ -1021,7 +1091,6 @@
   const renderNotifications = () => {
     const isCreator = isLoggedIn && currentRole === "creator";
     const notifications = getCreatorNotifications();
-    renderCreatorProfileActivity();
     const unreadCount = notifications.filter((notification) => !notification.read).length;
     notificationCount.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
     notificationCount.hidden = !isCreator || unreadCount === 0;
@@ -1039,55 +1108,31 @@
       notificationsEmpty.querySelector("p").textContent = isLoggedIn
         ? "Sign in with a Creator account to see likes and follows for your artist profile."
         : "Likes on your songs and new followers will appear here when you log in to your Creator account.";
+      renderCreatorProfileActivity();
       return;
     }
 
     if (!notifications.length) {
       notificationsEmpty.querySelector("strong").textContent = "No audience activity yet";
       notificationsEmpty.querySelector("p").textContent = "When listeners like one of your songs or follow your artist profile, updates will appear here.";
+      renderCreatorProfileActivity();
       return;
     }
 
-    notifications.slice().reverse().forEach((notification) => {
-      const item = document.createElement("article");
-      item.className = `notification-item${notification.read ? "" : " is-unread"}`;
-      const icon = document.createElement("span");
-      icon.className = "notification-item-icon";
-      icon.setAttribute("aria-hidden", "true");
-      icon.textContent = notification.type === "follow" ? "♟" : "♥";
-      const copy = document.createElement("div");
-      copy.className = "notification-item-copy";
-      const message = document.createElement("p");
-      const actor = document.createElement("strong");
-      actor.textContent = notification.actorName || "A listener";
-      message.append(actor);
-      message.append(document.createTextNode(notification.type === "follow"
-        ? " followed your artist profile."
-        : notification.type === "artist-like"
-          ? " liked your artist profile."
-          : ` liked “${notification.trackTitle || "your song"}”.`));
-      const details = document.createElement("small");
-      const timestamp = notification.createdAt
-        ? new Date(notification.createdAt).toLocaleString()
-        : "Recently";
-      const activityLabel = notification.type === "follow"
-        ? "New follower"
-        : notification.type === "artist-like"
-          ? "New artist like"
-          : notification.artistName || "Your artist profile";
-      details.textContent = `${activityLabel} · ${timestamp}`;
-      copy.append(message, details);
-      item.append(icon, copy);
-      notificationsList.append(item);
-    });
+    renderNotificationItems(notificationsList, notifications);
+    renderCreatorProfileActivity();
   };
 
   const markCreatorNotificationsRead = () => {
     if (!isLoggedIn || currentRole !== "creator" || !accountEmail) return;
     const notifications = getCreatorNotifications();
     if (!notifications.some((notification) => !notification.read)) return;
-    creatorNotifications[accountEmail] = notifications.map((notification) => ({ ...notification, read: true }));
+    creatorNotifications[accountEmail] = notifications.map((notification) => ({
+      ...notification,
+      read: true,
+    }));
     saveCreatorNotifications();
+    renderNotifications();
   };
 
   const syncAuthControls = () => {
@@ -1160,7 +1205,7 @@
   const updateLoginButtons = () => {
     const menuLabel = isLoggedIn ? "Log out" : "Log in";
     if (menuLoginButton) {
-      menuLoginButton.innerHTML = '<span class="nav-icon" aria-hidden="true">◎</span> ' + menuLabel;
+      menuLoginButton.replaceChildren(createIcon("user"), document.createTextNode(` ${menuLabel}`));
     }
     if (topProfileButton) {
       topProfileButton.querySelector(".profile-button-label").textContent = "Profile";
@@ -1282,7 +1327,19 @@
   const getCreatorNotifications = () => {
     if (!isLoggedIn || currentRole !== "creator" || !accountEmail) return [];
     const notifications = creatorNotifications[accountEmail];
-    return Array.isArray(notifications) ? notifications.filter((notification) => notification && typeof notification === "object") : [];
+    if (!Array.isArray(notifications)) return [];
+    return notifications
+      .filter((notification) => notification && typeof notification === "object")
+      .map((notification) => ({
+        ...notification,
+        id: String(notification.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        type: ["follow", "like", "artist-like"].includes(notification.type) ? notification.type : "like",
+        actorName: typeof notification.actorName === "string" && notification.actorName.trim()
+          ? notification.actorName.trim()
+          : getActorLabel(),
+        createdAt: notification.createdAt || new Date().toISOString(),
+        read: Boolean(notification.read),
+      }));
   };
   const saveCreatorNotifications = () => {
     if (!writeStoredValue("loxMuzikCreatorNotifications", creatorNotifications)) {
@@ -1292,16 +1349,34 @@
   const addCreatorNotification = (recipientEmail, notification) => {
     const recipient = String(recipientEmail || "").trim().toLocaleLowerCase();
     if (!recipient || recipient === accountEmail) return;
-    const existing = Array.isArray(creatorNotifications[recipient]) ? creatorNotifications[recipient] : [];
-    creatorNotifications[recipient] = [...existing, {
+    const existing = Array.isArray(creatorNotifications[recipient])
+      ? creatorNotifications[recipient].filter((entry) => entry && typeof entry === "object")
+      : [];
+    const nextNotification = {
       id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       actorName: getActorLabel(),
       createdAt: new Date().toISOString(),
       read: false,
       ...notification,
-    }].slice(-100);
+      type: ["follow", "like", "artist-like"].includes(notification?.type) ? notification.type : "like",
+      actorName: typeof notification?.actorName === "string" && notification.actorName.trim()
+        ? notification.actorName.trim()
+        : getActorLabel(),
+    };
+    const isDuplicateNotification = existing.some((entry) => (
+      entry.id === nextNotification.id
+      || (entry.type === nextNotification.type
+        && entry.actorName === nextNotification.actorName
+        && entry.artistName === nextNotification.artistName
+        && entry.trackTitle === nextNotification.trackTitle
+        && Math.abs(Date.parse(entry.createdAt || 0) - Date.parse(nextNotification.createdAt || 0)) < 2000)
+    ));
+    if (isDuplicateNotification) return;
+    creatorNotifications[recipient] = [...existing, nextNotification].slice(-100);
     saveCreatorNotifications();
-    renderNotifications();
+    if (isLoggedIn && currentRole === "creator" && accountEmail === recipient) {
+      renderNotifications();
+    }
   };
   const notifyTrackOwner = (track) => {
     if (track.ownerEmail) {
@@ -1563,11 +1638,11 @@
       query,
     ));
     const groups = [
-      { label: "Songs", icon: "♫", items: songs, view: "songs" },
-      { label: "Artists", icon: "♟", items: artists, view: "artists" },
-      { label: "Albums / EP", icon: "▣", items: albums, view: "albums" },
-      { label: "Mix tapes", icon: "◈", items: mixes, view: "songs" },
-      { label: "Radio", icon: "◉", items: stations, view: "radio" },
+      { label: "Songs", icon: "music", items: songs, view: "songs" },
+      { label: "Artists", icon: "users", items: artists, view: "artists" },
+      { label: "Albums / EP", icon: "compactDisc", items: albums, view: "albums" },
+      { label: "Mix tapes", icon: "shuffle", items: mixes, view: "songs" },
+      { label: "Radio", icon: "radio", items: stations, view: "radio" },
     ].filter((group) => group.items.length);
     searchResultsPanel.replaceChildren();
 
@@ -1598,7 +1673,7 @@
           const icon = document.createElement("span");
           icon.className = "search-result-icon";
           icon.setAttribute("aria-hidden", "true");
-          icon.textContent = group.icon;
+          icon.replaceChildren(createIcon(group.icon));
           const copy = document.createElement("span");
           copy.className = "search-result-copy";
           const title = document.createElement("strong");
@@ -2029,15 +2104,17 @@
       const format = document.createElement("small");
       format.textContent = station.format;
       const action = document.createElement("em");
-      action.textContent = isPlaying
-        ? "Ⅱ  On air · Tap to pause"
+      const actionState = isPlaying
+        ? { name: "pause", label: "On air · Tap to pause" }
         : isSelected && radioStatus === "CONNECTING"
-          ? "Connecting to live stream…"
+          ? { name: "spinner", label: "Connecting to live stream…" }
           : isSelected && radioStatus === "STREAM UNAVAILABLE"
-            ? "Stream unavailable · Tap to retry"
+            ? { name: "retry", label: "Stream unavailable · Tap to retry" }
             : isSelected
-              ? "▶  Paused · Tap to resume"
-              : "▶  Listen live";
+              ? { name: "play", label: "Paused · Tap to resume" }
+              : { name: "play", label: "Listen live" };
+      action.append(createIcon(actionState.name));
+      action.append(document.createTextNode(` ${actionState.label}`));
       copy.append(title, location, format, action);
       card.append(art, copy);
       card.addEventListener("click", () => {
@@ -2054,7 +2131,7 @@
     if (currentRadioStation) {
       radioMiniTitle.textContent = currentRadioStation.name;
       radioMiniStatus.textContent = radioAudio.paused ? radioStatus : "LIVE · PLAYING";
-      radioMiniToggle.textContent = radioAudio.paused ? "▶" : "Ⅱ";
+      setIconContent(radioMiniToggle, radioAudio.paused ? "play" : "pause");
       radioMiniToggle.setAttribute("aria-label", radioAudio.paused ? "Resume radio" : "Pause radio");
     }
   };
@@ -2066,9 +2143,23 @@
       radioNowPlaying.hidden = false;
       radioNowTitle.textContent = currentRadioStation.name;
       radioNowDetails.textContent = `${currentRadioStation.location} · ${currentRadioStation.format}`;
-      radioToggleButton.textContent = !radioAudio.paused
-        ? "Ⅱ Pause"
-        : status === "CONNECTING" ? "Connecting…" : status === "STREAM UNAVAILABLE" ? "↻ Try again" : "▶ Resume";
+      setIconContent(
+        radioToggleButton,
+        !radioAudio.paused
+          ? "pause"
+          : status === "CONNECTING"
+            ? "spinner"
+            : status === "STREAM UNAVAILABLE"
+              ? "retry"
+              : "play",
+        !radioAudio.paused
+          ? "Pause"
+          : status === "CONNECTING"
+            ? "Connecting…"
+            : status === "STREAM UNAVAILABLE"
+              ? "Try again"
+              : "Resume",
+      );
     }
     renderRadioStationCards(popularRadioGrid, radioStations.slice(0, 6), true);
     renderRadioStationCards(radioStationsGrid, getVisibleRadioStations());
@@ -2202,7 +2293,7 @@
       const play = document.createElement("button");
       play.className = "artist-action-button";
       play.type = "button";
-      play.textContent = "▶ Play";
+      setIconContent(play, "play", "Play");
       play.addEventListener("click", () => selectTrack(track.id, true));
       row.append(copy, likes, play);
       list.append(row);
@@ -2226,7 +2317,7 @@
       const play = document.createElement("button");
       play.className = "artist-action-button";
       play.type = "button";
-      play.textContent = "▶ Play";
+      setIconContent(play, "play", "Play");
       play.addEventListener("click", () => selectTrack(track.id, true, trendingTracks.map((item) => item.id)));
       row.append(copy, score, play);
       trendingList.append(row);
@@ -2378,7 +2469,7 @@
       play.type = "button";
       play.className = `liked-song-art track-art art-${track.art}`;
       applyTrackArtwork(play, track);
-      play.textContent = currentTrackId === track.id && !audio.paused ? "Ⅱ" : "▶";
+      setIconContent(play, currentTrackId === track.id && !audio.paused ? "pause" : "play");
       play.setAttribute("aria-label", `Play ${track.title} by ${track.artist}`);
       play.addEventListener("click", () => selectTrack(track.id, true, likedSongs.map((item) => item.id)));
       const copy = document.createElement("div");
@@ -2391,7 +2482,7 @@
       const removeLike = document.createElement("button");
       removeLike.type = "button";
       removeLike.className = "row-action is-liked liked-song-remove";
-      removeLike.textContent = "♥";
+      setIconContent(removeLike, "heart");
       removeLike.setAttribute("aria-label", `Remove ${track.title} from liked songs`);
       removeLike.addEventListener("click", () => {
         toggleTrackLike(track);
@@ -2471,7 +2562,7 @@
       const play = document.createElement("button");
       play.type = "button";
       play.className = `track-art download-song-art art-${track.art}`;
-      play.textContent = currentTrackId === track.id && !audio.paused ? "Ⅱ" : "▶";
+      setIconContent(play, currentTrackId === track.id && !audio.paused ? "pause" : "play");
       play.setAttribute("aria-label", `Play ${track.title} offline`);
       applyTrackArtwork(play, track);
       play.addEventListener("click", () => selectTrack(
@@ -2495,7 +2586,7 @@
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "row-action offline-remove-button";
-      remove.textContent = "×";
+      setIconContent(remove, "remove");
       remove.setAttribute("aria-label", `Remove ${track.title} from offline downloads`);
       remove.title = "Remove download";
       remove.addEventListener("click", () => removeOfflineTrack(track));
@@ -2581,7 +2672,11 @@
       link.className = `nav-link playlist-link${activeView === `playlist:${playlist.id}` ? " is-active" : ""}`;
       link.type = "button";
       link.dataset.playlist = playlist.id;
-      link.innerHTML = '<span class="nav-icon" aria-hidden="true">♫</span>';
+      const navIcon = document.createElement("span");
+      navIcon.className = "nav-icon";
+      navIcon.setAttribute("aria-hidden", "true");
+      navIcon.appendChild(createIcon("music"));
+      link.replaceChildren(navIcon);
       const label = document.createElement("span");
       label.className = "playlist-name";
       label.textContent = playlist.name;
@@ -2678,11 +2773,11 @@
       if (albumStatButton) albumStatButton.hidden = albumCount === 0;
       const likeButton = document.querySelector("#artist-like-button");
       likeButton.classList.toggle("is-active", engagement.liked);
-      likeButton.textContent = engagement.liked ? "♥ Liked" : "♡ Like";
+      setIconContent(likeButton, engagement.liked ? "heart" : "heartOutline", engagement.liked ? "Liked" : "Like");
       likeButton.setAttribute("aria-pressed", String(engagement.liked));
       const followButton = document.querySelector("#artist-follow-button");
       followButton.classList.toggle("is-active", engagement.followed);
-      followButton.textContent = engagement.followed ? "✓ Following" : "＋ Follow";
+      setIconContent(followButton, engagement.followed ? "check" : "follow", engagement.followed ? "Following" : "Follow");
       followButton.setAttribute("aria-pressed", String(engagement.followed));
       const songCountLabel = `${artistTracks.length} ${artistTracks.length === 1 ? "song" : "songs"}`;
       document.querySelector("#artist-song-count").textContent = String(artistTracks.length);
@@ -2704,11 +2799,11 @@
       document.querySelector("#artist-about-text").textContent = storyText;
       const aboutLikeButton = document.querySelector("#artist-about-like");
       aboutLikeButton.classList.toggle("is-active", engagement.liked);
-      aboutLikeButton.textContent = engagement.liked ? "♥ Liked" : "♡ Like";
+      setIconContent(aboutLikeButton, engagement.liked ? "heart" : "heartOutline", engagement.liked ? "Liked" : "Like");
       aboutLikeButton.setAttribute("aria-pressed", String(engagement.liked));
       const aboutFollowButton = document.querySelector("#artist-about-follow");
       aboutFollowButton.classList.toggle("is-active", engagement.followed);
-      aboutFollowButton.textContent = engagement.followed ? "✓ Following" : "＋ Follow";
+      setIconContent(aboutFollowButton, engagement.followed ? "check" : "follow", engagement.followed ? "Following" : "Follow");
       aboutFollowButton.setAttribute("aria-pressed", String(engagement.followed));
       artistTrackList.replaceChildren();
       const albumGrid = document.querySelector("#artist-album-grid");
@@ -2735,7 +2830,7 @@
           const art = document.createElement("span");
           art.className = `track-art art-${track.art}`;
           art.setAttribute("aria-hidden", "true");
-          art.textContent = "♫";
+          setIconContent(art, "music");
           applyTrackArtwork(art, track);
           const copy = document.createElement("span");
           copy.className = "artist-song-copy";
@@ -2765,7 +2860,7 @@
             card.className = "artist-album-card";
             const art = document.createElement("span");
             art.className = `artist-album-art art-${album.art}`;
-            art.textContent = "♫";
+            setIconContent(art, "music");
             const title = document.createElement("strong");
             title.textContent = album.title;
             const meta = document.createElement("small");
@@ -2876,7 +2971,7 @@
               ? "Your mix tapes are grouped here so you can jump into a full DJ session or a curated set quickly."
               : "Every song is grouped by category and genre. Filter the collection, find a favorite, and press play.";
           releaseHeroArt.className = "release-hero-art";
-          document.querySelector("#release-hero-art-label").textContent = "♫";
+          setIconContent(document.querySelector("#release-hero-art-label"), "music");
         }
       }
       document.querySelector("#release-count").textContent = matchingTracks.length;
@@ -2908,17 +3003,17 @@
         && !audio.paused,
       );
       if (selectedReleaseTrack?.url) {
-        releasePlayButton.textContent = selectedTrackIsPlaying ? "Ⅱ Pause" : "▶ Play";
+        setIconContent(releasePlayButton, selectedTrackIsPlaying ? "pause" : "play", selectedTrackIsPlaying ? "Pause" : "Play");
         releasePlayButton.disabled = false;
         releasePlayButton.setAttribute("aria-label", selectedTrackIsPlaying ? "Pause selected song" : "Play selected song");
         releasePlayButton.title = selectedTrackIsPlaying ? "Pause selected song" : "Play selected song";
       } else if (selectedReleaseTrack) {
-        releasePlayButton.textContent = "▶ Play";
+        setIconContent(releasePlayButton, "play", "Play");
         releasePlayButton.disabled = false;
         releasePlayButton.setAttribute("aria-label", "Play selected song");
         releasePlayButton.title = "Play selected song";
       } else {
-        releasePlayButton.textContent = "▶ Play all";
+        setIconContent(releasePlayButton, "play", "Play all");
         releasePlayButton.disabled = currentReleaseQueue.length === 0;
         releasePlayButton.setAttribute("aria-label", "Play all songs");
         releasePlayButton.title = "Play all songs";
@@ -2953,7 +3048,7 @@
           const coverPlay = document.createElement("span");
           coverPlay.className = "album-cover-play";
           coverPlay.setAttribute("aria-hidden", "true");
-          coverPlay.textContent = trackIsPlaying ? "Ⅱ" : "▶";
+          setIconContent(coverPlay, trackIsPlaying ? "pause" : "play");
           coverButton.append(coverTitle, coverPlay);
           coverButton.addEventListener("click", () => {
             if (trackIsPlaying) togglePlayback();
@@ -3006,7 +3101,7 @@
           applyTrackArtwork(artButton, track);
           const trackIsPlaying = track.id === currentTrackId && !audio.paused;
           artButton.setAttribute("aria-label", `${trackIsPlaying ? "Pause" : "Play"} ${track.title}`);
-          artButton.textContent = trackIsPlaying ? "Ⅱ" : "▶";
+          setIconContent(artButton, trackIsPlaying ? "pause" : "play");
           artButton.addEventListener("click", () => {
             if (trackIsPlaying) togglePlayback();
             else selectTrack(track.id, true, currentReleaseQueue);
@@ -3033,7 +3128,7 @@
           const trackIsLiked = isTrackLiked(track);
           like.className = `row-action${trackIsLiked ? " is-liked" : ""}`;
           like.setAttribute("aria-label", trackIsLiked ? `Unlike ${track.title}` : `Like ${track.title}`);
-          like.textContent = trackIsLiked ? "♥" : "♡";
+          setIconContent(like, trackIsLiked ? "heart" : "heartOutline");
           like.addEventListener("click", () => {
             toggleTrackLike(track);
             render();
@@ -3101,7 +3196,7 @@
         sourceLink.href = track.sourceUrl;
         sourceLink.target = "_blank";
         sourceLink.rel = "noopener noreferrer";
-        sourceLink.textContent = "↗";
+        setIconContent(sourceLink, "external");
         sourceLink.title = `Open ${track.title} by ${track.artist} on ${track.sourceName || "Jamendo"}`;
         sourceLink.setAttribute("aria-label", `View ${track.title} by ${track.artist} on ${track.sourceName || "Jamendo"}`);
         card.append(sourceLink);
@@ -3138,7 +3233,7 @@
         const cover = document.createElement("span");
         cover.className = `trend-chart-cover art-${track.art}`;
         cover.setAttribute("aria-hidden", "true");
-        cover.textContent = "♫";
+        setIconContent(cover, "music");
         applyTrackArtwork(cover, track);
         const copy = document.createElement("span");
         copy.className = "trend-chart-copy";
@@ -3156,7 +3251,11 @@
           source.target = "_blank";
           source.rel = "noopener noreferrer";
           source.setAttribute("aria-label", `Open ${track.title} by ${track.artist} on ${track.sourceName || "Jamendo"}`);
-          source.textContent = `${track.sourceName || "JAMENDO"} ↗`;
+          source.replaceChildren(
+            document.createTextNode(`${track.sourceName || "JAMENDO"}`),
+            document.createTextNode(" "),
+            createIcon("external"),
+          );
           source.title = track.attribution || `Open ${track.title} by ${track.artist} on ${track.sourceName || "Jamendo"}`;
           credits.append(source);
         }
@@ -3177,7 +3276,7 @@
         const play = document.createElement("button");
         play.type = "button";
         play.className = "trend-chart-play";
-        play.textContent = track.id === currentTrackId && !audio.paused ? "Ⅱ" : "▶";
+        setIconContent(play, track.id === currentTrackId && !audio.paused ? "pause" : "play");
         play.setAttribute("aria-label", `Play ${track.title} by ${track.artist}`);
         play.addEventListener("click", () => selectTrack(track.id, true, chartTracks.map((item) => item.id)));
         row.append(rank, cover, copy, credits, type, play);
@@ -3199,7 +3298,7 @@
       const art = document.createElement("span");
       art.className = `discovery-card-art art-${track.art}`;
       art.setAttribute("aria-hidden", "true");
-      art.textContent = "♫";
+      setIconContent(art, "music");
       applyTrackArtwork(art, track);
       const title = document.createElement("strong");
       title.textContent = track.title;
@@ -3228,7 +3327,7 @@
       const art = document.createElement("div");
       art.className = `track-art art-${track.art}`;
       art.setAttribute("aria-hidden", "true");
-      art.textContent = "♫";
+      setIconContent(art, "music");
       applyTrackArtwork(art, track);
       const title = document.createElement("strong");
       title.textContent = track.title;
@@ -3313,11 +3412,11 @@
     elements.songNowRelease.textContent = track.releaseYear || track.year || "Not specified";
     elements.songNowDuration.textContent = formatTime(track.duration || audio.duration);
     const trackIsLiked = isTrackLiked(track);
-    elements.songNowLike.textContent = trackIsLiked ? "♥" : "♡";
+    setIconContent(elements.songNowLike, trackIsLiked ? "heart" : "heartOutline");
     elements.songNowLike.setAttribute("aria-label", trackIsLiked ? "Unlike song" : "Like song");
     elements.songNowLike.setAttribute("aria-pressed", String(trackIsLiked));
     elements.songNowLike.title = trackIsLiked ? "Unlike song" : "Like song";
-    elements.likeButton.textContent = trackIsLiked ? "♥" : "♡";
+    setIconContent(elements.likeButton, trackIsLiked ? "heart" : "heartOutline");
     elements.likeButton.classList.toggle("is-liked", trackIsLiked);
     elements.likeButton.setAttribute("aria-label", trackIsLiked ? "Unlike this song" : "Like this song");
     elements.duration.textContent = formatTime(track.duration || audio.duration);
@@ -3391,8 +3490,8 @@
       playedTrackIds.unshift(currentTrackId);
       updatePlayer();
       render();
-      elements.playButton.textContent = "Ⅱ";
-      elements.songNowPlay.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>';
+      setIconContent(elements.playButton, "pause");
+      setIconContent(elements.songNowPlay, "pause");
       elements.songNowPlay.setAttribute("aria-label", "Pause");
       elements.playButton.setAttribute("aria-label", "Pause");
       elements.playButton.title = "Pause";
@@ -3926,7 +4025,7 @@
     const alreadyDownloaded = Boolean(getOfflineDownloadForTrack(track));
     button.type = "button";
     button.className = `row-action download-row-action${alreadyDownloaded ? " is-downloaded" : ""}`;
-    button.textContent = alreadyDownloaded ? "✓" : "↓";
+    setIconContent(button, alreadyDownloaded ? "check" : "download");
     button.title = "Choose where to save this song";
     button.setAttribute("aria-label", alreadyDownloaded
       ? `Choose where to save ${track.title}; already saved for offline listening`
@@ -4165,7 +4264,7 @@
       showToast(`${songSaved ? "Song was published, but the page could not update" : "Could not publish song"}: ${failureMessage}.${cleanupMessage}`);
     } finally {
       submitButton.disabled = false;
-      submitButton.textContent = "＋ Publish song";
+      setIconContent(submitButton, "plus", "Publish song");
     }
   });
 
@@ -5061,10 +5160,10 @@
       if (previousPlayIndex !== -1) playedTrackIds.splice(previousPlayIndex, 1);
       playedTrackIds.unshift(currentTrackId);
       render();
-      elements.playButton.textContent = "Ⅱ";
+      setIconContent(elements.playButton, "pause");
+      setIconContent(elements.songNowPlay, "pause");
       elements.playButton.setAttribute("aria-label", "Pause");
       elements.playButton.title = "Pause";
-      elements.songNowPlay.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>';
       elements.songNowPlay.setAttribute("aria-label", "Pause");
       elements.songNowPlay.title = "Pause";
       setPlaybackLoading(true);
@@ -5085,8 +5184,8 @@
     player.addEventListener("pause", () => {
       if (player !== audio) return;
       if (crossfadeInProgress) stopCrossfade();
-      elements.playButton.textContent = "▶";
-      elements.songNowPlay.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>';
+      setIconContent(elements.playButton, "play");
+      setIconContent(elements.songNowPlay, "play");
       elements.songNowPlay.setAttribute("aria-label", "Play");
       elements.playButton.setAttribute("aria-label", "Play");
       elements.playButton.title = "Play";

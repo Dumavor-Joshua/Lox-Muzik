@@ -12,10 +12,12 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
   <link rel="stylesheet" href="style.css?v=account-profile-responsive-1" />
 </head>
 
 <body>
+  <!-- Authentication and account entry screens -->
   <div class="auth-page" id="auth-page">
     <div class="auth-card">
       <div class="auth-brand" aria-label="Lox-Muzik login">
@@ -28,12 +30,12 @@
 
       <div class="account-type-picker" role="group" aria-label="Choose an account type">
         <button class="account-type-card is-selected" data-account-type="listener" type="button" aria-pressed="true">
-          <span class="account-type-icon" aria-hidden="true">♫</span>
+          <span class="account-type-icon" aria-hidden="true"><i class="fa-solid fa-music fa-icon"></i></span>
           <strong>Listener</strong>
           <small>Music and radio</small>
         </button>
         <button class="account-type-card" data-account-type="creator" type="button" aria-pressed="false">
-          <span class="account-type-icon" aria-hidden="true">✦</span>
+          <span class="account-type-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles fa-icon"></i></span>
           <strong>Creator</strong>
           <small>Publish and grow</small>
         </button>
@@ -105,10 +107,10 @@
       <div id="auth-social-options">
         <div class="social-auth-divider"><span>or continue with</span></div>
         <div class="social-auth-buttons">
-          <button id="google-auth-button" class="social-auth-button" type="button"><span class="google-mark"
-              aria-hidden="true">G</span> Continue with Google</button>
-          <button id="apple-auth-button" class="social-auth-button" type="button"><span class="apple-mark"
-              aria-hidden="true">●</span> Continue with Apple</button>
+          <button id="google-auth-button" class="social-auth-button" type="button"><i class="fa-brands fa-google fa-icon"
+              aria-hidden="true"></i> Continue with Google</button>
+          <button id="apple-auth-button" class="social-auth-button" type="button"><i class="fa-brands fa-apple fa-icon"
+              aria-hidden="true"></i> Continue with Apple</button>
         </div>
       </div>
       <p id="social-auth-message" class="social-auth-message" role="status" aria-live="polite"></p>
@@ -123,16 +125,7 @@
   <section id="email-confirmation-page" class="email-confirmation-page app-shell-hidden"
     aria-labelledby="email-confirmation-title">
     <div class="email-confirmation-card">
-      <div class="email-confirmation-icon" aria-hidden="true">
-        <svg viewBox="0 0 64 64" fill="none">
-          <rect x="7" y="14" width="50" height="36" rx="8" stroke="currentColor" stroke-width="3" />
-          <path d="m11 19 21 17 21-17" stroke="currentColor" stroke-width="3" stroke-linecap="round"
-            stroke-linejoin="round" />
-          <circle cx="49" cy="47" r="11" fill="#17101d" stroke="currentColor" stroke-width="3" />
-          <path d="M49 41v7l4 2" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </div>
+      <div class="email-confirmation-icon" aria-hidden="true"><i class="fa-solid fa-envelope-circle-check fa-icon"></i></div>
       <p class="email-confirmation-kicker">One last step</p>
       <h1 id="email-confirmation-title" tabindex="-1">Check your inbox</h1>
       <p class="email-confirmation-copy">We sent a confirmation link to</p>
@@ -145,6 +138,7 @@
     </div>
   </section>
 
+  <!-- Main music app shell -->
   <div class="app-shell app-shell-hidden" id="app-shell">
     <aside class="sidebar" aria-label="Main navigation">
       <a class="brand" href="#" aria-label="Lox-Muzik home">
@@ -155,100 +149,52 @@
       <div id="library-nav-group" class="nav-group">
         <p class="nav-label">Library</p>
         <button class="nav-link" data-view="playlists" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 5.5h11M4 9.5h11M4 13.5h6" />
-              <path d="M16 3.5v11.2a2.3 2.3 0 1 1-1.6-2.2V6l6-1.5v8.2a2.3 2.3 0 1 1-1.6-2.2V3.5z" />
-            </svg></span> Playlist
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-list-music fa-icon"></i></span> Playlist
         </button>
         <button class="nav-link" data-view="artists" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="9" cy="8" r="3.2" />
-              <path d="M3.5 20v-1.5a5.5 5.5 0 0 1 11 0V20zM16 5.5a3 3 0 0 1 0 5.8M17 14a4.5 4.5 0 0 1 3.5 4.4V20h-3" />
-            </svg></span> Artists
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-users fa-icon"></i></span> Artists
         </button>
         <button class="nav-link" data-view="songs" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M10 18V5l10-2v13" />
-              <circle cx="7" cy="18" r="3" />
-              <circle cx="17" cy="16" r="3" />
-            </svg></span> Songs
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-music fa-icon"></i></span> Songs
         </button>
         <button class="nav-link" data-view="albums" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9" />
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 3a9 9 0 0 1 9 9" />
-            </svg></span> Albums / EP
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-compact-disc fa-icon"></i></span> Albums / EP
         </button>
         <button class="nav-link" data-view="downloads" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
-              <path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-            </svg></span> Downloads
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-download fa-icon"></i></span> Downloads
         </button>
       </div>
 
       <div id="creator-nav-group" class="nav-group creator-nav-group" hidden>
         <p class="nav-label">Creator</p>
         <button id="creator-nav-link" class="nav-link creator-nav-link" data-view="creator" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m12 2 1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-2.8z" />
-              <path d="m19 2 .8 2.2L22 5l-2.2.8L19 8l-.8-2.2L16 5l2.2-.8z" />
-            </svg></span> Creator Studio
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-wand-magic-sparkles fa-icon"></i></span> Creator Studio
         </button>
         <button class="nav-link creator-nav-link" data-view="profile" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="8" r="3.2" />
-              <path d="M5 20a7 7 0 0 1 14 0" />
-            </svg></span> Artist Profile
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-user-pen fa-icon"></i></span> Artist Profile
         </button>
       </div>
 
       <div class="nav-group discover-group">
         <p id="discover-nav-label" class="nav-label">Discover</p>
         <button id="trends-nav-link" class="nav-link" data-view="trends" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 17.5 9 12l3.5 3.5L20 7.5" />
-              <path d="M14.5 7.5H20V13" />
-              <path d="M3 20h18" />
-            </svg></span> Trends
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-arrow-trend-up fa-icon"></i></span> Trends
         </button>
         <button class="nav-link" data-view="radio" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="18" r="1.5" />
-              <path
-                d="M12 16V4M8.5 7.5a5 5 0 0 0 0 7M15.5 7.5a5 5 0 0 1 0 7M5.5 4.5a9 9 0 0 0 0 13M18.5 4.5a9 9 0 0 1 0 13M9 21h6" />
-            </svg></span> Radio
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-tower-broadcast fa-icon"></i></span> Radio
         </button>
         <button class="nav-link" data-view="browse" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9" />
-              <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
-            </svg></span> Browse
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-compass fa-icon"></i></span> Browse
         </button>
         <button id="menu-login-button" class="nav-link login-nav-link" type="button">
-          <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="8" r="3.2" />
-              <path d="M5 20a7 7 0 0 1 14 0" />
-            </svg></span> Log in
+          <span class="nav-icon" aria-hidden="true"><i class="fa-solid fa-right-to-bracket fa-icon"></i></span> Log in
         </button>
       </div>
 
       <div class="sidebar-bottom">
         <div id="playlist-links" class="playlist-links" aria-label="Your playlists"></div>
         <button class="outline-button" data-scroll-song-form type="button">
-          <span aria-hidden="true">＋</span> Add a song
+          <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Add a song
         </button>
       </div>
     </aside>
@@ -261,7 +207,7 @@
         </a>
         <div id="search-container" class="search-container">
           <label class="search-box">
-            <span aria-hidden="true">⌕</span>
+            <i class="fa-solid fa-magnifying-glass fa-icon" aria-hidden="true"></i>
             <input id="search-input" type="search" placeholder="Search songs, artists, albums, mixes or radio"
               autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false"
               aria-controls="search-results" />
@@ -272,30 +218,16 @@
         <div class="topbar-actions" aria-label="Account and preferences">
           <button id="settings-button" class="topbar-icon-button" type="button" aria-label="Settings" title="Settings"
             aria-expanded="false" aria-controls="settings-view">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="3.2" />
-              <path
-                d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 2.94-.09-.02a1.7 1.7 0 0 0-1.79.35l-.07.06h-3.4l-.03-.09a1.7 1.7 0 0 0-1.3-1.17 1.7 1.7 0 0 0-1.75.58l-.06.07-2.94-1.7.02-.09a1.7 1.7 0 0 0-.35-1.79l-.06-.07v-3.4l.09-.03a1.7 1.7 0 0 0 1.17-1.3 1.7 1.7 0 0 0-.58-1.75l-.07-.06 1.7-2.94.09.02a1.7 1.7 0 0 0 1.79-.35l.07-.06h3.4l.03.09a1.7 1.7 0 0 0 1.3 1.17 1.7 1.7 0 0 0 1.75-.58l.06-.07 2.94 1.7-.02.09a1.7 1.7 0 0 0 .35 1.79l.06.07v3.4l-.09.03a1.7 1.7 0 0 0-1.17 1.3Z"
-                transform="translate(-1.1 -1.1) scale(1.09)" />
-            </svg>
+            <i class="fa-solid fa-gear fa-icon" aria-hidden="true"></i>
           </button>
           <button id="notifications-button" class="topbar-icon-button notification-button" type="button"
             aria-label="Notifications" title="Notifications" aria-expanded="false" aria-controls="notifications-panel">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-              stroke-linejoin="round" aria-hidden="true">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-              <path d="M10 21h4" />
-            </svg>
+            <i class="fa-solid fa-bell fa-icon" aria-hidden="true"></i>
             <span id="notification-count" class="notification-count" hidden></span>
           </button>
           <button id="top-profile-button" class="icon-button profile-button" type="button" aria-label="Profile"
             title="Profile">
-            <svg class="profile-button-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="8" r="3.3" />
-              <path d="M5 20a7 7 0 0 1 14 0" />
-            </svg>
+            <i class="fa-solid fa-user profile-button-icon fa-icon" aria-hidden="true"></i>
             <span class="profile-button-label">Profile</span>
           </button>
         </div>
@@ -305,19 +237,24 @@
             <div>
               <p class="eyebrow">YOUR AUDIENCE</p>
               <h2 id="notifications-title">Notifications</h2>
-            </div><span id="notification-status" class="notification-clear-state">CREATOR ONLY</span>
+            </div>
+            <span id="notification-status" class="notification-clear-state">CREATOR ONLY</span>
           </div>
-          <div id="notifications-empty" class="notification-empty-state"><span aria-hidden="true">♬</span><strong>Log in
-              as a creator</strong>
+          <div id="notifications-empty" class="notification-empty-state">
+            <i class="fa-solid fa-music fa-icon" aria-hidden="true"></i>
+            <strong>Log in as a creator</strong>
             <p>Likes on your songs and new followers will appear here when you log in to your Creator account.</p>
           </div>
           <div id="notifications-list" class="notification-list" aria-live="polite" hidden></div>
         </section>
       </header>
 
+      <!-- Settings and app preferences -->
       <section id="settings-view" class="settings-page" hidden aria-labelledby="settings-title">
         <div class="settings-page-heading">
-          <button id="settings-back" class="artist-action-button settings-back" type="button">← Back</button>
+          <button id="settings-back" class="artist-action-button settings-back" type="button">
+            <i class="fa-solid fa-arrow-left fa-icon" aria-hidden="true"></i> Back
+          </button>
           <div>
             <p class="eyebrow section-eyebrow">PREFERENCES</p>
             <h1 id="settings-title">Settings</h1>
@@ -328,9 +265,13 @@
           <section class="settings-group settings-account-group" aria-labelledby="settings-account-title">
             <h2 id="settings-account-title" class="settings-group-title">Account</h2>
             <div class="settings-account-card">
-              <span id="settings-account-avatar" class="settings-account-avatar" aria-hidden="true">♫</span>
-              <span class="settings-account-copy"><strong id="settings-account-name">Not signed in</strong><small
-                  id="settings-account-email">Sign in to view your account</small></span>
+              <span id="settings-account-avatar" class="settings-account-avatar" aria-hidden="true">
+                <i class="fa-solid fa-music fa-icon"></i>
+              </span>
+              <span class="settings-account-copy">
+                <strong id="settings-account-name">Not signed in</strong>
+                <small id="settings-account-email">Sign in to view your account</small>
+              </span>
               <span id="settings-account-role" class="settings-account-role">Guest</span>
             </div>
           </section>
@@ -416,6 +357,7 @@
         </div>
       </section>
 
+      <!-- Library and release browsing views -->
       <section id="release-view" class="release-view" hidden aria-labelledby="release-title">
         <div id="release-hero" class="release-hero art-2">
           <div class="release-hero-gallery" aria-hidden="true">
@@ -428,12 +370,17 @@
             <h1 id="release-title">Songs</h1>
             <p id="release-description"></p>
             <div class="release-hero-actions">
-              <button id="release-play-all" class="artist-play-button" type="button">▶ Play all</button>
-              <button id="release-shuffle" class="release-shuffle-button" type="button">⤨ Shuffle</button>
+              <button id="release-play-all" class="artist-play-button" type="button">
+                <i class="fa-solid fa-play fa-icon" aria-hidden="true"></i> Play all
+              </button>
+              <button id="release-shuffle" class="release-shuffle-button" type="button">
+                <i class="fa-solid fa-shuffle fa-icon" aria-hidden="true"></i> Shuffle
+              </button>
             </div>
           </div>
-          <div id="release-hero-art" class="release-hero-art" aria-hidden="true"><span
-              id="release-hero-art-label">♫</span></div>
+          <div id="release-hero-art" class="release-hero-art" aria-hidden="true">
+            <span id="release-hero-art-label"><i class="fa-solid fa-music fa-icon"></i></span>
+          </div>
         </div>
         <div class="release-overview" aria-label="Music library summary">
           <span><strong id="release-count">0</strong><small id="release-count-label">songs</small></span>
@@ -462,10 +409,12 @@
         </div>
         <div id="release-grid" class="release-grid" aria-live="polite"></div>
         <div id="release-empty" class="release-empty" hidden>
-          <span aria-hidden="true">♫</span>
+          <i class="fa-solid fa-music fa-icon" aria-hidden="true"></i>
           <h2 id="release-empty-title">Your music starts here</h2>
           <p id="release-empty-copy">Add songs to your collection to see them here.</p>
-          <button class="artist-play-button" data-scroll-song-form type="button">＋ Add a song</button>
+          <button class="artist-play-button" data-scroll-song-form type="button">
+            <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Add a song
+          </button>
         </div>
       </section>
 
@@ -480,7 +429,7 @@
         </div>
         <div id="downloads-list" class="downloads-list" aria-live="polite"></div>
         <div id="downloads-empty" class="downloads-empty">
-          <span aria-hidden="true">↓</span>
+          <i class="fa-solid fa-download fa-icon" aria-hidden="true"></i>
           <h2>No offline songs yet</h2>
           <p>Log in, choose “Save to Offline Downloads” from a song’s download options, and it will be ready to play
             here.</p>
@@ -508,37 +457,67 @@
         </div>
         <div id="artist-detail" class="artist-detail" hidden>
           <div class="artist-detail-header">
-            <button id="artist-back" class="artist-back" type="button" aria-label="Back to all artists">←</button>
+            <button id="artist-back" class="artist-back" type="button" aria-label="Back to all artists">
+              <i class="fa-solid fa-arrow-left fa-icon" aria-hidden="true"></i>
+            </button>
             <div class="artist-detail-header-title">Artist</div>
             <div class="artist-detail-header-actions" aria-label="Artist actions">
-              <button class="artist-header-icon" type="button" aria-label="Like artist">♡</button>
-              <button class="artist-header-icon" type="button" aria-label="More options">•••</button>
+              <button class="artist-header-icon" type="button" aria-label="Like artist">
+                <i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i>
+              </button>
+              <button class="artist-header-icon" type="button" aria-label="More options">
+                <i class="fa-solid fa-ellipsis fa-icon" aria-hidden="true"></i>
+              </button>
             </div>
           </div>
           <div id="artist-hero" class="artist-hero art-0">
             <div class="artist-hero-copy">
               <p class="eyebrow">ARTIST</p>
               <h1 id="artist-detail-name"></h1>
-              <p class="artist-hero-meta"><span id="artist-hero-genre">Pop</span> • <span
-                  id="artist-hero-tag">Electronic</span> • <span id="artist-hero-listeners">2.4M</span> monthly
-                listeners</p>
+              <p class="artist-hero-meta">
+                <span id="artist-hero-genre">Pop</span> •
+                <span id="artist-hero-tag">Electronic</span> •
+                <span id="artist-hero-listeners">2.4M</span> monthly listeners
+              </p>
             </div>
           </div>
           <div class="artist-profile-bar">
             <div class="artist-stats" aria-label="Artist likes, followers, and releases">
-              <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
-                  aria-hidden="true">♥</span><strong id="artist-like-count">0</strong><span>likes</span></button>
-              <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
-                  aria-hidden="true">◉</span><strong id="artist-follow-count">0</strong><span>followers</span></button>
-              <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
-                  aria-hidden="true">♬</span><strong id="artist-song-count">0</strong><span>songs</span></button>
-              <button type="button" class="artist-stat-pill"><span class="artist-stat-icon"
-                  aria-hidden="true">▣</span><strong id="artist-album-count">0</strong><span>albums</span></button>
+              <button type="button" class="artist-stat-pill">
+                <span class="artist-stat-icon" aria-hidden="true">
+                  <i class="fa-solid fa-heart fa-icon"></i>
+                </span>
+                <strong id="artist-like-count">0</strong><span>likes</span>
+              </button>
+              <button type="button" class="artist-stat-pill">
+                <span class="artist-stat-icon" aria-hidden="true">
+                  <i class="fa-solid fa-user-group fa-icon"></i>
+                </span>
+                <strong id="artist-follow-count">0</strong><span>followers</span>
+              </button>
+              <button type="button" class="artist-stat-pill">
+                <span class="artist-stat-icon" aria-hidden="true">
+                  <i class="fa-solid fa-music fa-icon"></i>
+                </span>
+                <strong id="artist-song-count">0</strong><span>songs</span>
+              </button>
+              <button type="button" class="artist-stat-pill">
+                <span class="artist-stat-icon" aria-hidden="true">
+                  <i class="fa-solid fa-compact-disc fa-icon"></i>
+                </span>
+                <strong id="artist-album-count">0</strong><span>albums</span>
+              </button>
             </div>
             <div class="artist-profile-actions">
-              <button id="artist-like-button" class="artist-action-button" type="button">♡ Like</button>
-              <button id="artist-follow-button" class="artist-action-button" type="button">＋ Follow</button>
-              <button id="artist-play-all" class="artist-play-button" type="button">▶ Shuffle Play</button>
+              <button id="artist-like-button" class="artist-action-button" type="button">
+                <i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i> Like
+              </button>
+              <button id="artist-follow-button" class="artist-action-button" type="button">
+                <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Follow
+              </button>
+              <button id="artist-play-all" class="artist-play-button" type="button">
+                <i class="fa-solid fa-shuffle fa-icon" aria-hidden="true"></i> Shuffle Play
+              </button>
             </div>
           </div>
 
@@ -569,8 +548,12 @@
               <h2 id="artist-about-title"></h2>
               <p id="artist-about-text"></p>
               <div class="artist-about-actions">
-                <button id="artist-about-like" class="artist-action-button" type="button">♡ Like</button>
-                <button id="artist-about-follow" class="artist-action-button" type="button">＋ Follow</button>
+                <button id="artist-about-like" class="artist-action-button" type="button">
+                  <i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i> Like
+                </button>
+                <button id="artist-about-follow" class="artist-action-button" type="button">
+                  <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Follow
+                </button>
               </div>
             </div>
           </section>
@@ -592,7 +575,9 @@
             <span id="radio-now-details"></span>
           </div>
           <div class="radio-now-controls">
-            <button id="radio-toggle-button" class="artist-play-button" type="button">▶ Listen live</button>
+            <button id="radio-toggle-button" class="artist-play-button" type="button">
+              <i class="fa-solid fa-play fa-icon" aria-hidden="true"></i> Listen live
+            </button>
             <button id="radio-stop-button" class="artist-action-button" type="button">Stop</button>
             <label class="radio-volume-control" for="radio-volume">Volume
               <input id="radio-volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Radio volume" />
@@ -644,11 +629,14 @@
                   links, and streams that require sign-in won’t play.</small>
               </label>
             </fieldset>
-            <button class="artist-play-button radio-submit-button" type="submit">＋ Add station</button>
+            <button class="artist-play-button radio-submit-button" type="submit">
+              <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Add station
+            </button>
           </form>
         </section>
       </section>
 
+      <!-- Creator dashboard -->
       <section id="creator-view" class="creator-view" hidden aria-labelledby="creator-view-title">
         <div class="creator-heading">
           <div>
@@ -656,7 +644,9 @@
             <h1 id="creator-view-title">Creator Studio</h1>
             <p>Upload songs, add a radio station, and follow your audience activity.</p>
           </div>
-          <button class="artist-play-button" data-scroll-song-form type="button">＋ Add a song</button>
+          <button class="artist-play-button" data-scroll-song-form type="button">
+            <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Add a song
+          </button>
         </div>
 
         <div class="creator-stats" aria-label="Creator account overview">
@@ -758,7 +748,9 @@
               </label>
             </div>
 
-            <button class="artist-play-button creator-song-submit" type="submit">＋ Publish song</button>
+            <button class="artist-play-button creator-song-submit" type="submit">
+              <i class="fa-solid fa-plus fa-icon" aria-hidden="true"></i> Publish song
+            </button>
           </form>
         </section>
 
@@ -774,7 +766,7 @@
           <div class="creator-public-profile-summary">
             <span class="creator-public-profile-avatar" aria-hidden="true">
               <img id="creator-studio-profile-photo" alt="" hidden />
-              <span id="creator-studio-profile-initials">♫</span>
+              <span id="creator-studio-profile-initials"><i class="fa-solid fa-music fa-icon" aria-hidden="true"></i></span>
             </span>
             <span>
               <strong id="creator-studio-profile-name">Your artist name</strong>
@@ -811,9 +803,12 @@
         </section>
       </section>
 
+      <!-- Account and artist profile screens -->
       <section id="account-profile-view" class="account-profile-page" hidden aria-labelledby="account-profile-title">
         <div class="settings-page-heading">
-          <button id="account-profile-back" class="artist-action-button settings-back" type="button">← Back</button>
+          <button id="account-profile-back" class="artist-action-button settings-back" type="button">
+            <i class="fa-solid fa-arrow-left fa-icon" aria-hidden="true"></i> Back
+          </button>
           <div>
             <p class="eyebrow section-eyebrow">YOUR ACCOUNT</p>
             <h1 id="account-profile-title">My Profile</h1>
@@ -823,7 +818,7 @@
         <section class="account-profile-card" aria-label="Account profile details">
           <div class="account-profile-identity">
             <span id="account-profile-avatar" class="settings-account-avatar account-profile-avatar"
-              aria-hidden="true">♫</span>
+              aria-hidden="true"><i class="fa-solid fa-music fa-icon"></i></span>
             <div class="account-profile-copy">
               <h2 id="account-profile-name">Your name</h2>
               <p id="account-profile-email">email@example.com</p>
@@ -846,7 +841,9 @@
             <h1 id="artist-profile-page-title">Artist profile</h1>
             <p>Preview your artist page and update your details when you are ready.</p>
           </div>
-          <span class="profile-visibility-badge"><span aria-hidden="true">●</span> Profile preview</span>
+          <span class="profile-visibility-badge">
+            <i class="fa-solid fa-circle-check fa-icon" aria-hidden="true"></i> Profile preview
+          </span>
         </div>
         <div class="artist-profile-layout">
           <section class="artist-profile-preview creator-panel" aria-labelledby="artist-profile-preview-title">
@@ -855,7 +852,7 @@
                 hidden />
               <span class="artist-profile-avatar" aria-hidden="true">
                 <img id="artist-profile-avatar-photo" alt="" hidden />
-                <span id="artist-profile-avatar-initials">♫</span>
+                <span id="artist-profile-avatar-initials"><i class="fa-solid fa-music fa-icon" aria-hidden="true"></i></span>
               </span>
               <div class="artist-profile-preview-heading">
                 <p class="eyebrow">ARTIST</p>
@@ -948,7 +945,9 @@
             <p id="welcome-kicker" class="eyebrow">WELCOME TO</p>
             <h1 id="browse-view-title">Lox-Muzik</h1>
             <p id="welcome-description">Your home for the best music, trending sounds, artists and more.</p>
-            <button id="welcome-action" class="welcome-action-button" type="button">▶ Start Listening</button>
+            <button id="welcome-action" class="welcome-action-button" type="button">
+              <i class="fa-solid fa-play fa-icon" aria-hidden="true"></i> Start Listening
+            </button>
           </div>
           <div id="welcome-slide-dots" class="welcome-slide-dots" role="group" aria-label="Welcome slides">
             <button class="welcome-slide-dot is-active" type="button" data-welcome-slide="0"
@@ -960,14 +959,26 @@
           </div>
         </section>
         <nav class="browse-shortcuts" aria-label="Browse music categories">
-          <button class="browse-shortcut" data-browse-target="trending-section" type="button"><span
-              aria-hidden="true">↗</span><strong>Trending</strong><small>What listeners are playing</small></button>
-          <button class="browse-shortcut" data-browse-target="popular-artists-section" type="button"><span
-              aria-hidden="true">♟</span><strong>Artists</strong><small>Find a new favorite</small></button>
-          <button class="browse-shortcut" data-browse-target="popular-releases-section" type="button"><span
-              aria-hidden="true">▣</span><strong>Releases</strong><small>Albums and singles</small></button>
-          <button class="browse-shortcut" data-browse-target="popular-radio-section" type="button"><span
-              aria-hidden="true">◉</span><strong>Radio</strong><small>Listen live</small></button>
+          <button class="browse-shortcut" data-browse-target="trending-section" type="button">
+            <span aria-hidden="true"><i class="fa-solid fa-arrow-up-right-from-square fa-icon"></i></span>
+            <strong>Trending</strong>
+            <small>What listeners are playing</small>
+          </button>
+          <button class="browse-shortcut" data-browse-target="popular-artists-section" type="button">
+            <span aria-hidden="true"><i class="fa-solid fa-users fa-icon"></i></span>
+            <strong>Artists</strong>
+            <small>Find a new favorite</small>
+          </button>
+          <button class="browse-shortcut" data-browse-target="popular-releases-section" type="button">
+            <span aria-hidden="true"><i class="fa-solid fa-compact-disc fa-icon"></i></span>
+            <strong>Releases</strong>
+            <small>Albums and singles</small>
+          </button>
+          <button class="browse-shortcut" data-browse-target="popular-radio-section" type="button">
+            <span aria-hidden="true"><i class="fa-solid fa-tower-broadcast fa-icon"></i></span>
+            <strong>Radio</strong>
+            <small>Listen live</small>
+          </button>
         </nav>
       </section>
 
@@ -994,7 +1005,7 @@
               </div>
             </div>
             <div id="liked-songs-list" class="liked-songs-list" aria-live="polite"></div>
-            <div id="liked-songs-empty" class="likes-empty-state"><span aria-hidden="true">♡</span>
+            <div id="liked-songs-empty" class="likes-empty-state"><i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i>
               <p>Like a song to save it here.</p><button class="artist-action-button" data-view="browse"
                 type="button">Browse music</button>
             </div>
@@ -1007,7 +1018,7 @@
               </div>
             </div>
             <div id="followed-artists-grid" class="followed-artists-grid" aria-live="polite"></div>
-            <div id="followed-artists-empty" class="likes-empty-state"><span aria-hidden="true">♟</span>
+            <div id="followed-artists-empty" class="likes-empty-state"><i class="fa-solid fa-user-group fa-icon" aria-hidden="true"></i>
               <p>Follow an artist to keep them close.</p><button class="artist-action-button" data-view="artists"
                 type="button">Find artists</button>
             </div>
@@ -1049,7 +1060,9 @@
                 id="trend-chart-status">ALL LISTENERS</span></span>
           </div>
           <div id="trend-chart-list" class="trend-chart-list"></div>
-          <button id="trend-chart-more" class="text-link trend-chart-more" type="button" hidden>View more ↓</button>
+          <button id="trend-chart-more" class="text-link trend-chart-more" type="button" hidden>
+            View more <i class="fa-solid fa-chevron-down fa-icon" aria-hidden="true"></i>
+          </button>
         </section>
       </section>
 
@@ -1093,7 +1106,7 @@
         </div>
         <div id="played-history-grid" class="played-history-grid" aria-live="polite"></div>
         <div id="played-history-empty" class="recent-empty">
-          <span aria-hidden="true">♫</span>
+          <i class="fa-solid fa-music fa-icon" aria-hidden="true"></i>
           <p>Songs you play will show up here.</p>
         </div>
       </section>
@@ -1102,100 +1115,65 @@
 
     <nav class="mobile-nav" aria-label="Mobile navigation">
       <button id="mobile-home-nav" class="mobile-nav-link" data-view="browse" type="button" aria-label="Home">
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
-          </svg></span>
+        <i class="fa-solid fa-house fa-icon" aria-hidden="true"></i>
         <small>Home</small>
       </button>
       <button id="mobile-library-nav" class="mobile-nav-link" data-view="songs" type="button" aria-label="Library">
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 18V5l10-2v13" />
-            <circle cx="7" cy="18" r="3" />
-            <circle cx="17" cy="16" r="3" />
-          </svg></span>
+        <i class="fa-solid fa-music fa-icon" aria-hidden="true"></i>
         <small>Library</small>
       </button>
       <button id="mobile-downloads-nav" class="mobile-nav-link" data-view="downloads" type="button"
         aria-label="Downloads">
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
-            <path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
-          </svg></span>
+        <i class="fa-solid fa-download fa-icon" aria-hidden="true"></i>
         <small>Downloads</small>
       </button>
       <button id="mobile-radio-nav" class="mobile-nav-link" data-view="radio" type="button" aria-label="Radio">
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="18" r="1.5" />
-            <path
-              d="M12 16V4M8.5 7.5a5 5 0 0 0 0 7M15.5 7.5a5 5 0 0 1 0 7M5.5 4.5a9 9 0 0 0 0 13M18.5 4.5a9 9 0 0 1 0 13M9 21h6" />
-          </svg></span>
+        <i class="fa-solid fa-tower-broadcast fa-icon" aria-hidden="true"></i>
         <small>Radio</small>
       </button>
       <button id="mobile-trends-nav" class="mobile-nav-link" data-view="trends" type="button" aria-label="Trends">
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 17.5 9 12l3.5 3.5L20 7.5" />
-            <path d="M14.5 7.5H20V13" />
-            <path d="M3 20h18" />
-          </svg></span>
+        <i class="fa-solid fa-arrow-trend-up fa-icon" aria-hidden="true"></i>
         <small>Trends</small>
       </button>
       <button id="mobile-saved-nav" class="mobile-nav-link" data-view="likes" type="button" aria-label="Saved music">
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20.8 8.8c0 5.2-8.8 11-8.8 11s-8.8-5.8-8.8-11a4.8 4.8 0 0 1 8.8-2.5 4.8 4.8 0 0 1 8.8 2.5Z" />
-          </svg></span>
+        <i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i>
         <small>Saved</small>
       </button>
       <button id="mobile-creator-nav" class="mobile-nav-link" data-view="creator" type="button"
         aria-label="Creator Studio" hidden>
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="m12 2 1.8 7.2L21 12l-7.2 1.8L12 21l-1.8-7.2L3 12l7.2-2.8z" />
-            <path d="m19 2 .8 2.2L22 5l-2.2.8L19 8l-.8-2.2L16 5l2.2-.8z" />
-          </svg></span>
+        <i class="fa-solid fa-wand-magic-sparkles fa-icon" aria-hidden="true"></i>
         <small>Studio</small>
       </button>
       <button id="mobile-profile-nav" class="mobile-nav-link" data-view="profile" type="button"
         aria-label="Artist profile" hidden>
-        <span aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="3.2" />
-            <path d="M5 20a7 7 0 0 1 14 0" />
-          </svg></span>
+        <i class="fa-solid fa-user-pen fa-icon" aria-hidden="true"></i>
         <small>Profile</small>
       </button>
     </nav>
   </div>
 
+  <!-- Expanded player and persistent playback controls -->
   <section id="song-now-playing" class="song-now-playing" aria-label="Now playing" aria-hidden="true">
     <header class="song-now-header">
-      <button id="song-player-close" type="button" aria-label="Minimize player" title="Minimize player"><svg
-          viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m6 9 6 6 6-6" />
-        </svg></button>
+      <button id="song-player-close" type="button" aria-label="Minimize player" title="Minimize player">
+        <i class="fa-solid fa-chevron-down fa-icon" aria-hidden="true"></i>
+      </button>
       <span>NOW PLAYING</span>
-      <button id="song-player-queue" type="button" aria-label="Your music" title="Your music"><svg viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="M4 6h16M4 12h11M4 18h7" />
-          <path d="M18 15v6m-3-3h6" />
-        </svg></button>
+      <button id="song-player-queue" type="button" aria-label="Your music" title="Your music">
+        <i class="fa-solid fa-list-ul fa-icon" aria-hidden="true"></i>
+      </button>
     </header>
     <div class="song-now-art-wrap">
-      <div id="song-now-art" class="mini-art art-0"><span>♫</span></div>
+      <div id="song-now-art" class="mini-art art-0"><i class="fa-solid fa-music fa-icon" aria-hidden="true"></i></div>
     </div>
     <div class="song-now-heading">
       <div>
         <h1 id="song-now-title">Song title</h1>
         <p id="song-now-artist">Artist</p>
-      </div><button id="song-now-like" type="button" aria-label="Like song" title="Like song"><svg viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="M20.8 8.8c0 5.2-8.8 11-8.8 11s-8.8-5.8-8.8-11a4.8 4.8 0 0 1 8.8-2.5 4.8 4.8 0 0 1 8.8 2.5Z" />
-        </svg></button>
+      </div>
+      <button id="song-now-like" type="button" aria-label="Like song" title="Like song">
+        <i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i>
+      </button>
     </div>
     <div class="song-now-lyrics"><span>LYRICS</span>
       <p id="song-now-lyrics-copy">Lyrics are not available for this song yet.</p>
@@ -1205,26 +1183,21 @@
       <input id="song-now-seek" type="range" min="0" max="1000" value="0" aria-label="Seek song">
     </div>
     <div class="song-now-controls">
-      <button id="song-now-shuffle" type="button" aria-label="Shuffle" title="Shuffle"><svg viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="m16 3 4 4-4 4M4 17l4-4 4-6 4-4M4 7h4l2 2m4 6 2 2h4l-4 4" />
-        </svg></button>
-      <button id="song-now-previous" type="button" aria-label="Previous song" title="Previous song"><svg
-          viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M6 5v14M19 6 8 12l11 6z" />
-        </svg></button>
-      <button id="song-now-play" type="button" aria-label="Pause" title="Pause"><svg viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="M8 5v14M16 5v14" />
-        </svg></button>
-      <button id="song-now-next" type="button" aria-label="Next song" title="Next song"><svg viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="M18 5v14M5 6l11 6-11 6z" />
-        </svg></button>
-      <button id="song-now-repeat" type="button" aria-label="Repeat" title="Repeat"><svg viewBox="0 0 24 24"
-          aria-hidden="true">
-          <path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" />
-        </svg></button>
+      <button id="song-now-shuffle" type="button" aria-label="Shuffle" title="Shuffle">
+        <i class="fa-solid fa-shuffle fa-icon" aria-hidden="true"></i>
+      </button>
+      <button id="song-now-previous" type="button" aria-label="Previous song" title="Previous song">
+        <i class="fa-solid fa-backward-step fa-icon" aria-hidden="true"></i>
+      </button>
+      <button id="song-now-play" type="button" aria-label="Pause" title="Pause">
+        <i class="fa-solid fa-pause fa-icon" aria-hidden="true"></i>
+      </button>
+      <button id="song-now-next" type="button" aria-label="Next song" title="Next song">
+        <i class="fa-solid fa-forward-step fa-icon" aria-hidden="true"></i>
+      </button>
+      <button id="song-now-repeat" type="button" aria-label="Repeat" title="Repeat">
+        <i class="fa-solid fa-repeat fa-icon" aria-hidden="true"></i>
+      </button>
     </div>
     <section class="song-now-info">
       <h2>Song info</h2>
@@ -1241,7 +1214,6 @@
     </section>
   </section>
 
-
   <!-- Playback support elements used by the app controller -->
   <audio id="audio-player" preload="metadata"></audio>
   <audio id="crossfade-audio" preload="metadata"></audio>
@@ -1253,9 +1225,15 @@
     </div>
     <div class="player-controls" aria-label="Playback controls">
       <div class="player-transport">
-        <button id="previous-button" type="button" aria-label="Previous">|◀</button>
-        <button id="play-button" type="button" aria-label="Play">▶</button>
-        <button id="next-button" type="button" aria-label="Next">▶|</button>
+        <button id="previous-button" type="button" aria-label="Previous">
+          <i class="fa-solid fa-backward-step fa-icon" aria-hidden="true"></i>
+        </button>
+        <button id="play-button" type="button" aria-label="Play">
+          <i class="fa-solid fa-play fa-icon" aria-hidden="true"></i>
+        </button>
+        <button id="next-button" type="button" aria-label="Next">
+          <i class="fa-solid fa-forward-step fa-icon" aria-hidden="true"></i>
+        </button>
       </div>
       <div class="player-progress">
         <span id="current-time">0:00</span>
@@ -1264,10 +1242,14 @@
       </div>
     </div>
     <div class="player-actions">
-      <button id="like-button" type="button" aria-label="Like">♡</button>
-      <button id="download-button" type="button" aria-label="Download">↓</button>
+      <button id="like-button" type="button" aria-label="Like">
+        <i class="fa-regular fa-heart fa-icon" aria-hidden="true"></i>
+      </button>
+      <button id="download-button" type="button" aria-label="Download">
+        <i class="fa-solid fa-download fa-icon" aria-hidden="true"></i>
+      </button>
       <label class="volume-control">
-        <span aria-hidden="true">♪</span>
+        <i class="fa-solid fa-volume-high fa-icon" aria-hidden="true"></i>
         <input id="volume" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
       </label>
     </div>
@@ -1276,8 +1258,12 @@
     <span class="radio-mini-live" aria-hidden="true"></span>
     <span class="radio-mini-copy"><small id="radio-mini-status">LIVE · PLAYING</small><strong
         id="radio-mini-title">Radio</strong></span>
-    <button id="radio-mini-toggle" type="button" aria-label="Pause radio">Ⅱ</button>
-    <button id="radio-mini-close" type="button" aria-label="Close radio player">×</button>
+    <button id="radio-mini-toggle" type="button" aria-label="Pause radio">
+      <i class="fa-solid fa-pause fa-icon" aria-hidden="true"></i>
+    </button>
+    <button id="radio-mini-close" type="button" aria-label="Close radio player">
+      <i class="fa-solid fa-xmark fa-icon" aria-hidden="true"></i>
+    </button>
   </div>
   <dialog id="download-destination-dialog">
     <p id="download-destination-track">Choose where to save this song</p>
