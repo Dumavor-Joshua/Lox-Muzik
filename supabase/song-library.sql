@@ -10,6 +10,9 @@ create table if not exists public.songs (
   cover_url text,
   release_type text not null default 'single'
     check (release_type in ('single', 'album', 'mix')),
+  release_id uuid,
+  release_title text,
+  track_number integer,
   genre text,
   allow_streaming boolean not null default true,
   allow_offline boolean not null default true,
@@ -18,7 +21,11 @@ create table if not exists public.songs (
   created_at timestamptz not null default now()
 );
 
+alter table public.songs add column if not exists release_id uuid;
+alter table public.songs add column if not exists release_title text;
+alter table public.songs add column if not exists track_number integer;
 create index if not exists songs_created_at_idx on public.songs (created_at desc);
+create index if not exists songs_release_id_idx on public.songs (release_id);
 alter table public.songs enable row level security;
 revoke select on table public.songs from anon, authenticated;
 grant select (
@@ -31,6 +38,9 @@ grant select (
   audio_url,
   cover_url,
   release_type,
+  release_id,
+  release_title,
+  track_number,
   genre,
   allow_streaming,
   allow_offline,
@@ -58,6 +68,7 @@ create policy "Creators can publish their own songs"
   to authenticated
   with check (lower(owner_email) = lower(auth.jwt() ->> 'email'));
 
+drop function if exists public.get_my_songs();
 create or replace function public.get_my_songs()
 returns table (
   id uuid,
@@ -68,6 +79,9 @@ returns table (
   audio_url text,
   cover_url text,
   release_type text,
+  release_id uuid,
+  release_title text,
+  track_number integer,
   genre text,
   allow_streaming boolean,
   allow_offline boolean,
@@ -89,6 +103,9 @@ as $function$
     song.audio_url,
     song.cover_url,
     song.release_type,
+    song.release_id,
+    song.release_title,
+    song.track_number,
     song.genre,
     song.allow_streaming,
     song.allow_offline,

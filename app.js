@@ -164,6 +164,10 @@
   const creatorAudioFile = document.querySelector("#creator-audio-file");
   const creatorSongTitle = document.querySelector("#creator-song-title");
   const creatorSongArtist = document.querySelector("#creator-song-artist");
+  const creatorReleaseType = document.querySelector("#creator-release-type");
+  const creatorTrackTitleList = document.querySelector("#creator-track-title-list");
+  const creatorTrackTitles = document.querySelector("#creator-track-titles");
+  const creatorSubmitButton = creatorSongForm.querySelector('[type="submit"]');
   const creatorProfilePhotoInput = document.querySelector("#creator-profile-photo");
   const buildSongStoragePath = (email, filename) => {
     const safeEmail = String(email || "anonymous").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "anonymous";
@@ -184,15 +188,15 @@
     if (!data?.publicUrl) throw new Error("Could not create a public link for the uploaded file.");
     return { bucketName, path, url: data.publicUrl };
   };
-  const publishSongToSupabase = async (payload) => {
+  const publishSongsToSupabase = async (payloads) => {
     if (!supabaseClient) return null;
-    const { data, error } = await supabaseClient.from("songs").insert([payload]).select().single();
+    const { data, error } = await supabaseClient.from("songs").insert(payloads).select();
     if (error) throw error;
     return data;
   };
   const loadSupabaseSongs = async () => {
     if (!supabaseClient) return [];
-    const songColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
+    const songColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,release_id,release_title,track_number,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
     const { data: publicSongs, error: publicError } = await supabaseClient
       .from("songs")
       .select(songColumns)
@@ -276,6 +280,9 @@
       ownerEmail: String(song.ownerEmail || ""),
       fileName: String(song.file_name || `${song.title || "song"}.mp3`),
       releaseType: ["album", "mix"].includes(song.release_type) ? song.release_type : "single",
+      releaseId: song.release_id ? String(song.release_id) : "",
+      releaseTitle: String(song.release_title || ""),
+      trackNumber: Number(song.track_number) || 0,
       genre: String(song.genre || ""),
       url: storagePath ? "" : String(song.audio_url || ""),
       storagePath,
@@ -1782,6 +1789,26 @@
     return normalized;
   };
   const getReleaseType = (track) => normalizeReleaseType(track?.releaseType || "single");
+  const groupAlbumTracks = (tracks) => {
+    const releases = new Map();
+    tracks.filter((track) => getReleaseType(track) === "album").forEach((track) => {
+      const releaseId = track.releaseId || track.id;
+      const release = releases.get(releaseId) || {
+        id: releaseId,
+        title: track.releaseTitle || track.title,
+        tracks: [],
+      };
+      release.tracks.push(track);
+      releases.set(releaseId, release);
+    });
+    const groups = Array.from(releases.values());
+    groups.forEach((release) => {
+      release.tracks.sort((first, second) => (
+        (first.trackNumber || Number.MAX_SAFE_INTEGER) - (second.trackNumber || Number.MAX_SAFE_INTEGER)
+      ));
+    });
+    return groups;
+  };
   const getReleaseLabel = (trackOrValue, short = false) => {
     const releaseType = typeof trackOrValue === "string"
       ? normalizeReleaseType(trackOrValue)
@@ -1802,13 +1829,17 @@
           count: 0,
           plays: 0,
           albums: 0,
+          albumIds: new Set(),
           singles: 0,
           mixes: 0,
           art: track.art,
         };
         existing.count += 1;
         existing.plays += Number(track.plays) || 0;
-        if (releaseType === "album") existing.albums += 1;
+        if (releaseType === "album") {
+          existing.albumIds.add(track.releaseId || track.id);
+          existing.albums = existing.albumIds.size;
+        }
         else if (releaseType === "mix") existing.mixes += 1;
         else existing.singles += 1;
         artistMap.set(key, existing);
@@ -2718,9 +2749,9 @@
           : "Get started with these featured artists. Add songs to your collection to build your own artist library.";
 
       directoryArtists.forEach((artist) => {
-        const albumCount = artist.tracks.filter((track) => getReleaseType(track) === "album").length;
+        const albumCount = groupAlbumTracks(artist.tracks).length;
         const mixCount = artist.tracks.filter((track) => getReleaseType(track) === "mix").length;
-        const singleCount = artist.tracks.length - albumCount - mixCount;
+        const singleCount = artist.tracks.filter((track) => getReleaseType(track) === "single").length;
         const engagement = getArtistEngagement(artist.name);
         const card = document.createElement("button");
         card.type = "button";
@@ -2762,8 +2793,8 @@
       artistHero.setAttribute("aria-label", `${selectedArtistName} artist artwork`);
       applyArtistArtwork(artistHero, selectedArtistName);
       document.querySelector("#artist-detail-name").textContent = selectedArtistName;
-      const albumTracks = artistTracks.filter((track) => getReleaseType(track) === "album");
-      const albumCount = albumTracks.length;
+      const artistAlbums = groupAlbumTracks(artistTracks);
+      const albumCount = artistAlbums.length;
       const albumStatButton = document.querySelector("#artist-album-count")?.closest(".artist-stat-pill");
       const albumStatLabel = albumStatButton?.querySelector("span:last-child");
       document.querySelector("#artist-like-count").textContent = String(engagement.likes);
@@ -2848,10 +2879,10 @@
         });
 
         if (hasAlbums) {
-          const albumEntries = albumTracks.slice(0, 4).map((track) => ({
-            title: track.title,
-            subtitle: `${selectedArtistName} • ${getReleaseLabel(track, true)}`,
-            art: track.art,
+          const albumEntries = artistAlbums.slice(0, 4).map((release) => ({
+            ...release,
+            subtitle: `${selectedArtistName} • ${release.tracks.length} ${release.tracks.length === 1 ? "track" : "tracks"}`,
+            art: release.tracks[0]?.art ?? 0,
           }));
 
           albumEntries.forEach((album) => {
@@ -2866,7 +2897,8 @@
             const meta = document.createElement("small");
             meta.textContent = album.subtitle;
             card.append(art, title, meta);
-            card.addEventListener("click", () => selectTrack(artistTracks.find((track) => track.title === album.title)?.id || artistTracks[0]?.id, true, queue));
+            const releaseQueue = album.tracks.map((track) => track.id);
+            card.addEventListener("click", () => selectTrack(releaseQueue[0] || artistTracks[0]?.id, true, releaseQueue.length ? releaseQueue : queue));
             albumGrid.append(card);
           });
         }
@@ -2906,7 +2938,7 @@
         if (dailyArtistPicks && !dailyArtistTrackOrder.has(track.id)) return false;
         const taxonomy = getSongTaxonomy(track);
         const matchesSearch = !searchInput.value.trim()
-          || `${track.title} ${track.artist} ${track.fileName} ${taxonomy.category} ${taxonomy.genre}`.toLocaleLowerCase().includes(searchInput.value.trim().toLocaleLowerCase());
+          || `${track.title} ${track.releaseTitle || ""} ${track.artist} ${track.fileName} ${taxonomy.category} ${taxonomy.genre}`.toLocaleLowerCase().includes(searchInput.value.trim().toLocaleLowerCase());
         const releaseType = getReleaseType(track);
         const matchesPage = isAlbumsPage
           ? releaseType === "album"
@@ -2922,8 +2954,11 @@
         : Number(second.id === selectedReleaseTrackId) - Number(first.id === selectedReleaseTrackId));
       const songGroups = groupSongsByCategoryAndGenre(matchingTracks);
       const groupedSongTracks = songGroups.flatMap((group) => group.tracks);
+      const albumGroups = isAlbumsPage ? groupAlbumTracks(matchingTracks) : [];
       const artistCount = new Set(matchingTracks.flatMap(getTrackArtistNames).map(normalizeArtistKey)).size;
-      currentReleaseQueue = (isAlbumsPage ? matchingTracks : groupedSongTracks).map((track) => track.id);
+      const releaseCount = isAlbumsPage ? albumGroups.length : matchingTracks.length;
+      currentReleaseQueue = (isAlbumsPage ? albumGroups.flatMap((release) => release.tracks) : groupedSongTracks)
+        .map((track) => track.id);
       const selectedReleaseTrack = matchingTracks.find((track) => track.id === selectedReleaseTrackId) || null;
       const knownDuration = matchingTracks.reduce((total, track) => total + (Number.isFinite(track.duration) ? track.duration : 0), 0);
       const releaseTitle = document.querySelector("#release-title");
@@ -2974,9 +3009,9 @@
           setIconContent(document.querySelector("#release-hero-art-label"), "music");
         }
       }
-      document.querySelector("#release-count").textContent = matchingTracks.length;
+      document.querySelector("#release-count").textContent = releaseCount;
       document.querySelector("#release-count-label").textContent = isAlbumsPage
-        ? `${matchingTracks.length === 1 ? "album" : "albums"}`
+        ? `${releaseCount === 1 ? "album" : "albums"}`
         : songFilter === "mixes"
           ? `${matchingTracks.length === 1 ? "mix tape" : "mix tapes"}`
           : `${matchingTracks.length === 1 ? "song" : "songs"}`;
@@ -2984,7 +3019,7 @@
       document.querySelector("#release-duration").textContent = formatTime(knownDuration);
       document.querySelector("#release-results-label").textContent = matchingTracks.length
         ? isAlbumsPage
-          ? `Showing ${matchingTracks.length} albums`
+          ? `Showing ${releaseCount} albums`
           : songFilter === "mixes"
             ? `Showing ${matchingTracks.length} mix tapes`
             : `Showing ${matchingTracks.length} songs in ${songGroups.length} genre groups`
@@ -3034,17 +3069,20 @@
           : "Add songs to your collection to see them here.";
 
       if (isAlbumsPage) {
-        matchingTracks.forEach((track) => {
+        albumGroups.forEach((release) => {
+          const track = release.tracks[0];
+          if (!track) return;
+          const releaseTrackIds = release.tracks.map((releaseTrack) => releaseTrack.id);
           const card = document.createElement("article");
           card.className = "album-release-card";
           const coverButton = document.createElement("button");
           coverButton.type = "button";
           coverButton.className = `album-cover art-${track.art}`;
           applyTrackArtwork(coverButton, track);
-          const trackIsPlaying = track.id === currentTrackId && !audio.paused;
-          coverButton.setAttribute("aria-label", `${trackIsPlaying ? "Pause" : "Play"} ${track.title} by ${track.artist}`);
+          const trackIsPlaying = releaseTrackIds.includes(currentTrackId) && !audio.paused;
+          coverButton.setAttribute("aria-label", `${trackIsPlaying ? "Pause" : "Play"} ${release.title} by ${track.artist}`);
           const coverTitle = document.createElement("span");
-          coverTitle.textContent = track.title;
+          coverTitle.textContent = release.title;
           const coverPlay = document.createElement("span");
           coverPlay.className = "album-cover-play";
           coverPlay.setAttribute("aria-hidden", "true");
@@ -3052,21 +3090,32 @@
           coverButton.append(coverTitle, coverPlay);
           coverButton.addEventListener("click", () => {
             if (trackIsPlaying) togglePlayback();
-            else selectTrack(track.id, true, [track.id]);
+            else selectTrack(track.id, true, releaseTrackIds);
           });
           const copy = document.createElement("div");
           copy.className = "album-release-copy";
           const title = document.createElement("strong");
-          title.textContent = track.title;
+          title.textContent = release.title;
           const artist = document.createElement("span");
           artist.textContent = track.artist;
           const detail = document.createElement("small");
-          detail.textContent = `Album · ${formatTime(track.duration)}`;
+          const releaseDuration = release.tracks.reduce(
+            (total, releaseTrack) => total + (Number(releaseTrack.duration) || 0),
+            0,
+          );
+          detail.textContent = `Album / EP · ${release.tracks.length} ${release.tracks.length === 1 ? "track" : "tracks"} · ${formatTime(releaseDuration)}`;
+          const trackList = document.createElement("ol");
+          trackList.className = "album-release-tracklist";
+          release.tracks.forEach((releaseTrack) => {
+            const item = document.createElement("li");
+            item.textContent = releaseTrack.title;
+            trackList.append(item);
+          });
           const actions = document.createElement("span");
           actions.className = "album-release-actions";
           const download = createDownloadButton(track);
           actions.append(download);
-          copy.append(title, artist, detail, actions);
+          copy.append(title, artist, detail, trackList, actions);
           card.append(coverButton, copy);
           releaseGrid.append(card);
         });
@@ -3407,7 +3456,7 @@
     elements.songNowTitle.textContent = track.title;
     elements.songNowArtist.textContent = track.artist;
     elements.songNowArtistInfo.textContent = track.artist;
-    elements.songNowAlbum.textContent = track.album || (track.releaseType === "album" ? "Album" : "Single");
+    elements.songNowAlbum.textContent = track.album || track.releaseTitle || (track.releaseType === "album" ? "Album" : "Single");
     elements.songNowGenre.textContent = track.genre || track.genres?.join(", ") || "Not specified";
     elements.songNowRelease.textContent = track.releaseYear || track.year || "Not specified";
     elements.songNowDuration.textContent = formatTime(track.duration || audio.duration);
@@ -4143,44 +4192,116 @@
     }
   };
 
+  const getCreatorAudioTitle = (file) => file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+  const updateCreatorTrackTitles = () => {
+    const files = Array.from(creatorAudioFile.files || []);
+    creatorTrackTitles.replaceChildren();
+    files.forEach((file, index) => {
+      const item = document.createElement("li");
+      const titleInput = document.createElement("input");
+      const titleLabel = document.createElement("label");
+      const inputId = `creator-track-title-${index}`;
+      titleLabel.htmlFor = inputId;
+      titleLabel.textContent = `Track ${index + 1}`;
+      titleInput.id = inputId;
+      titleInput.type = "text";
+      titleInput.maxLength = 100;
+      titleInput.required = true;
+      titleInput.value = getCreatorAudioTitle(file);
+      titleInput.setAttribute("aria-label", `Track ${index + 1} title`);
+      item.append(titleLabel, titleInput);
+      creatorTrackTitles.append(item);
+    });
+    creatorTrackTitleList.hidden = creatorReleaseType.value !== "album" || files.length === 0;
+  };
+  const updateCreatorUploadMode = () => {
+    const isAlbum = creatorReleaseType.value === "album";
+    creatorAudioFile.multiple = isAlbum;
+    document.querySelector("#creator-audio-label").childNodes[0].textContent = isAlbum
+      ? "Audio files "
+      : "Audio file ";
+    document.querySelector("#creator-audio-help").textContent = isAlbum
+      ? "MP3, WAV, M4A, OGG, or FLAC. Select at least two tracks; their order here becomes the track order."
+      : "MP3, WAV, M4A, OGG, or FLAC. Add one song per upload.";
+    document.querySelector("#creator-title-label").childNodes[0].textContent = isAlbum
+      ? "Album / EP title "
+      : "Song title ";
+    creatorSongTitle.placeholder = isAlbum ? "Enter the album or EP title" : "Enter the song title";
+    creatorTrackTitleList.hidden = !isAlbum || creatorAudioFile.files.length === 0;
+    if (isAlbum) updateCreatorTrackTitles();
+    setIconContent(creatorSubmitButton, "plus", isAlbum ? "Publish Album / EP" : "Publish song");
+  };
   creatorAudioFile.addEventListener("change", () => {
     const file = creatorAudioFile.files?.[0];
-    const suggestedTitle = file?.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
-    if (suggestedTitle && (!creatorSongTitle.value.trim() || creatorSongTitle.value === creatorSongTitle.dataset.fileSuggestion)) {
+    const suggestedTitle = file ? getCreatorAudioTitle(file) : "";
+    if (creatorReleaseType.value !== "album"
+      && suggestedTitle
+      && (!creatorSongTitle.value.trim() || creatorSongTitle.value === creatorSongTitle.dataset.fileSuggestion)) {
       creatorSongTitle.value = suggestedTitle;
       creatorSongTitle.dataset.fileSuggestion = suggestedTitle;
     }
+    if (creatorReleaseType.value === "album") updateCreatorTrackTitles();
   });
+  creatorReleaseType.addEventListener("change", updateCreatorUploadMode);
+  updateCreatorUploadMode();
 
   creatorSongForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!requireCreator("upload songs")) return;
 
-    const file = creatorAudioFile.files?.[0];
-    if (!file) {
-      showToast("Choose an audio file before publishing.");
+    const audioFiles = Array.from(creatorAudioFile.files || []);
+    const releaseType = creatorReleaseType.value;
+    if (!audioFiles.length) {
+      showToast(releaseType === "album" ? "Choose at least two tracks for your Album / EP." : "Choose an audio file before publishing.");
+      creatorAudioFile.focus();
+      return;
+    }
+    if (releaseType === "album" && audioFiles.length < 2) {
+      showToast("An Album / EP needs at least two audio tracks.");
+      creatorAudioFile.focus();
+      return;
+    }
+    if (releaseType !== "album" && audioFiles.length > 1) {
+      showToast("Choose one audio file, or change the release type to Album / EP.");
       creatorAudioFile.focus();
       return;
     }
     const supportedAudioType = ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/wave", "audio/mp4", "audio/x-m4a", "audio/ogg", "audio/flac", "audio/x-flac"];
-    if (!(supportedAudioType.includes(file.type) || /\.(mp3|wav|m4a|ogg|flac)$/i.test(file.name))) {
+    const unsupportedFile = audioFiles.find((file) => (
+      !(supportedAudioType.includes(file.type) || /\.(mp3|wav|m4a|ogg|flac)$/i.test(file.name))
+    ));
+    if (unsupportedFile) {
       showToast("Choose an MP3, WAV, M4A, OGG, or FLAC audio file.");
       return;
     }
 
     const title = creatorSongTitle.value.trim();
     const artist = creatorSongArtist.value.trim();
+    const trackTitles = releaseType === "album"
+      ? Array.from(creatorTrackTitles.querySelectorAll("input")).map((input) => input.value.trim())
+      : [title];
     const copyrightConfirmed = creatorSongForm.querySelector('input[name="copyrightConfirm"]')?.checked;
-    if (!title || !artist) {
-      showToast("Add the song title and artist name before publishing.");
+    if (!title || !artist || trackTitles.length !== audioFiles.length || trackTitles.some((trackTitle) => !trackTitle)) {
+      showToast(releaseType === "album"
+        ? "Add the Album / EP title, artist name, and a title for every track."
+        : "Add the song title and artist name before publishing.");
       return;
     }
     if (!copyrightConfirmed) {
       showToast("Please confirm that you own this song or have permission to upload it.");
       return;
     }
-    if (tracks.some((track) => track.ownerEmail === accountEmail && track.fileName === file.name && track.size === file.size)) {
-      showToast("That audio file is already in your catalog.");
+    const selectedFileKeys = new Set();
+    const hasDuplicateFile = audioFiles.some((file) => {
+      const key = `${file.name.toLocaleLowerCase()}::${file.size}`;
+      if (selectedFileKeys.has(key)) return true;
+      selectedFileKeys.add(key);
+      return tracks.some((track) => track.ownerEmail === accountEmail
+        && track.fileName === file.name
+        && track.size === file.size);
+    });
+    if (hasDuplicateFile) {
+      showToast("One or more selected audio files are already in your catalog or selected more than once.");
       return;
     }
 
@@ -4192,56 +4313,67 @@
       return;
     }
 
-    const submitButton = creatorSongForm.querySelector('[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = "Publishing…";
+    creatorSubmitButton.disabled = true;
     const uploadedObjects = [];
     let songSaved = false;
     try {
       if (!supabaseClient) throw new Error("Cloud publishing is unavailable. Check your connection and try again.");
-      const embeddedCover = coverFile ? null : await readEmbeddedCover(file);
-      const audioObject = await uploadSongToSupabaseStorage(file, accountEmail, "music-files");
-      uploadedObjects.push(audioObject);
+      const embeddedCover = coverFile ? null : await readEmbeddedCover(audioFiles[0]);
+      const releaseId = releaseType === "album" ? crypto.randomUUID() : null;
+      const audioObjects = [];
+      for (let index = 0; index < audioFiles.length; index += 1) {
+        creatorSubmitButton.textContent = `Uploading track ${index + 1} of ${audioFiles.length}…`;
+        const audioObject = await uploadSongToSupabaseStorage(audioFiles[index], accountEmail, "music-files");
+        audioObjects.push(audioObject);
+        uploadedObjects.push(audioObject);
+      }
       const coverObject = coverFile
         ? await uploadSongToSupabaseStorage(coverFile, accountEmail, "artist-covers")
         : null;
       if (coverObject) uploadedObjects.push(coverObject);
-      const songInsert = {
-        title,
+      const artistNames = splitArtistCredits(artist);
+      const songInserts = audioFiles.map((file, index) => ({
+        title: releaseType === "album" ? trackTitles[index] : title,
         artist,
-        artist_names: splitArtistCredits(artist),
+        artist_names: artistNames,
         owner_email: accountEmail,
         upload_source: "web",
         file_name: file.name,
-        audio_url: audioObject.url,
+        audio_url: audioObjects[index].url,
         cover_url: coverObject?.url || embeddedCover,
-        release_type: (() => {
-          const selectedReleaseType = String(creatorFormData.get("releaseType") || "single");
-          if (selectedReleaseType === "mix") return "mix";
-          if (selectedReleaseType === "album") return "album";
-          return "single";
-        })(),
+        release_type: releaseType,
+        release_id: releaseId,
+        release_title: releaseType === "album" ? title : null,
+        track_number: releaseType === "album" ? index + 1 : null,
         genre: creatorFormData.get("genre") === "auto" ? null : creatorFormData.get("genre"),
         allow_streaming: creatorFormData.has("allowStreaming"),
         allow_offline: creatorFormData.has("allowOffline"),
         allow_download_to_phone: creatorFormData.has("allowDownloadToPhone"),
         allow_video_use: creatorFormData.has("allowVideoUse"),
         created_at: new Date().toISOString(),
-      };
-      const savedSong = await publishSongToSupabase(songInsert);
-      if (!savedSong) throw new Error("The song was uploaded, but its catalog record was not saved.");
+      }));
+      creatorSubmitButton.textContent = "Saving release…";
+      const savedSongs = await publishSongsToSupabase(songInserts);
+      if (!Array.isArray(savedSongs) || savedSongs.length !== songInserts.length) {
+        throw new Error("The audio was uploaded, but the complete catalog release was not saved.");
+      }
       songSaved = true;
-      tracks.push({
-        ...mapSupabaseSongToTrack({ ...savedSong, ownerEmail: accountEmail }, tracks.length),
-        size: file.size,
+      savedSongs.forEach((savedSong, index) => {
+        tracks.push({
+          ...mapSupabaseSongToTrack({ ...savedSong, ownerEmail: accountEmail }, tracks.length),
+          size: audioFiles[index].size,
+        });
       });
       refreshSharedSongCatalog();
       creatorSongForm.reset();
+      updateCreatorUploadMode();
       creatorSongArtist.value = creatorName;
       creatorSongArtist.dataset.autoArtist = creatorName;
       creatorSongTitle.dataset.fileSuggestion = "";
       render();
-      showToast("Song added to your catalog.");
+      showToast(releaseType === "album"
+        ? `“${title}” was published with ${savedSongs.length} tracks.`
+        : "Song added to your catalog.");
     } catch (error) {
       const cleanupErrors = [];
       if (!songSaved) {
@@ -4263,8 +4395,8 @@
         : "";
       showToast(`${songSaved ? "Song was published, but the page could not update" : "Could not publish song"}: ${failureMessage}.${cleanupMessage}`);
     } finally {
-      submitButton.disabled = false;
-      setIconContent(submitButton, "plus", "Publish song");
+      creatorSubmitButton.disabled = false;
+      setIconContent(creatorSubmitButton, "plus", creatorReleaseType.value === "album" ? "Publish Album / EP" : "Publish song");
     }
   });
 

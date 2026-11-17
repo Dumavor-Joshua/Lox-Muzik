@@ -1096,8 +1096,33 @@ input:focus-visible {
 }
 
 .creator-upload-audio-field,
+.creator-track-title-list,
 .creator-song-submit {
   grid-column: 1 / -1;
+}
+
+.creator-track-title-list[hidden] {
+  display: none;
+}
+
+.creator-track-title-list ol {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.creator-track-title-list li {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.creator-track-title-list li label {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .creator-song-submit {
@@ -2702,6 +2727,21 @@ input:focus-visible {
 .album-release-copy small {
   color: var(--muted);
   font-size: 10px;
+}
+
+.album-release-tracklist {
+  display: grid;
+  gap: 3px;
+  margin: 5px 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.album-release-tracklist li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .release-empty {

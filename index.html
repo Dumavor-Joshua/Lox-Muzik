@@ -668,19 +668,24 @@
             </div>
           </div>
           <p class="creator-note creator-upload-intro">Choose an audio file, add the song details, then publish it to
-            your catalog.</p>
+            your catalog. Choose Album / EP to upload a multi-track release.</p>
           <form id="creator-song-form" class="creator-song-form">
             <label class="field creator-upload-audio-field">
-              <span>Audio file <b aria-hidden="true">*</b></span>
+              <span id="creator-audio-label">Audio file <b aria-hidden="true">*</b></span>
               <input id="creator-audio-file" name="audioFile" type="file"
                 accept="audio/mpeg,audio/wav,audio/x-wav,audio/mp4,audio/ogg,audio/flac,.mp3,.wav,.m4a,.ogg,.flac"
                 required aria-describedby="creator-audio-help" />
               <small id="creator-audio-help">MP3, WAV, M4A, OGG, or FLAC. Add one song per upload.</small>
             </label>
             <label class="field">
-              <span>Song title <b aria-hidden="true">*</b></span>
+              <span id="creator-title-label">Song title <b aria-hidden="true">*</b></span>
               <input id="creator-song-title" name="title" maxlength="100" placeholder="Enter the song title" required />
             </label>
+            <div id="creator-track-title-list" class="field creator-track-title-list" hidden>
+              <span>Track titles <b aria-hidden="true">*</b></span>
+              <small>Tracks are published in this order. Edit titles if needed.</small>
+              <ol id="creator-track-titles"></ol>
+            </div>
             <label class="field">
               <span>Artist name <b aria-hidden="true">*</b></span>
               <input id="creator-song-artist" name="artist" maxlength="60" placeholder="Your artist name" required
@@ -690,7 +695,7 @@
             </label>
             <label class="field">
               <span>Release type</span>
-              <select name="releaseType">
+              <select id="creator-release-type" name="releaseType">
                 <option value="single">Single</option>
                 <option value="album">Album / EP</option>
                 <option value="mix">DJ Mix Tape / Mix Tape</option>
