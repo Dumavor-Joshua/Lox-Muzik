@@ -513,6 +513,40 @@
       return false;
     }
   };
+  const persistedAccountViews = new Set([
+    "browse",
+    "creator",
+    "profile",
+    "songs",
+    "albums",
+    "artists",
+    "radio",
+    "trends",
+    "likes",
+    "playlists",
+    "downloads",
+  ]);
+  const getStoredAccountState = (email) => {
+    const storedStates = readStoredValue("loxMuzikAccountStates", {});
+    if (!storedStates || typeof storedStates !== "object" || Array.isArray(storedStates)) return null;
+    const state = storedStates[String(email || "").trim().toLocaleLowerCase()];
+    return state && typeof state === "object" && !Array.isArray(state) ? state : null;
+  };
+  const saveAccountState = (email, role, view) => {
+    const normalizedEmail = String(email || "").trim().toLocaleLowerCase();
+    if (!normalizedEmail || !["creator", "listener"].includes(role)) return;
+    const storedStates = readStoredValue("loxMuzikAccountStates", {});
+    const accountStates = storedStates && typeof storedStates === "object" && !Array.isArray(storedStates)
+      ? storedStates
+      : {};
+    accountStates[normalizedEmail] = {
+      role,
+      view: persistedAccountViews.has(view) ? view : role === "creator" ? "creator" : "browse",
+    };
+    if (!writeStoredValue("loxMuzikAccountStates", accountStates)) {
+      console.warn("Could not save this account's role and last page in this browser.");
+    }
+  };
   const welcomeSlides = [
     {
       kicker: "WELCOME TO",
@@ -3801,6 +3835,7 @@
     if (view === "artists" && !artistName) searchInput.value = "";
     activeView = view;
     selectedArtistName = view === "artists" ? artistName : null;
+    if (isLoggedIn) saveAccountState(accountEmail, currentRole, activeView);
     document.querySelectorAll("[data-view]").forEach((button) => {
       button.classList.toggle("is-active", button.dataset.view === view);
     });
@@ -4427,12 +4462,17 @@
     emailConfirmationTitle.focus();
   };
 
-  const completeLogin = (emailOverride = "") => {
+  const completeLogin = (emailOverride = "", accountTypeOverride = "") => {
     const email = String(emailOverride || new FormData(loginForm).get("email") || "").trim().toLocaleLowerCase();
     if (!email || (!emailOverride && !loginForm.reportValidity())) return;
+    const storedAccountState = getStoredAccountState(email);
     const confirmedAccountType = readEmailConfirmationRole() || pendingSignupRole;
     if (confirmedAccountType === "creator" || confirmedAccountType === "listener") {
       selectedAccountType = confirmedAccountType;
+    } else if (accountTypeOverride === "creator" || accountTypeOverride === "listener") {
+      selectedAccountType = accountTypeOverride;
+    } else if (storedAccountState?.role === "creator" || storedAccountState?.role === "listener") {
+      selectedAccountType = storedAccountState.role;
     }
     pendingSignupRole = null;
     clearEmailConfirmationParams();
@@ -4468,9 +4508,17 @@
     if (authPage) authPage.classList.add("app-shell-hidden");
     if (emailConfirmationPage) emailConfirmationPage.classList.add("app-shell-hidden");
     if (appShell) appShell.classList.remove("app-shell-hidden");
-    if (currentRole === "creator") setView("creator");
-    else if (activeView === "creator" || activeView === "profile") setView("browse");
-    else render();
+    const canRestoreLastView = storedAccountState?.role === currentRole
+      && persistedAccountViews.has(storedAccountState.view);
+    const initialView = canRestoreLastView
+      ? storedAccountState.view
+      : currentRole === "creator"
+        ? "creator"
+        : activeView === "creator" || activeView === "profile"
+          ? "browse"
+          : activeView;
+    setView(initialView);
+    saveAccountState(accountEmail, currentRole, initialView);
     refreshSharedSongCatalog();
     showToast(
       currentRole === "creator" ? "Welcome to Creator Studio." : "Welcome to Lox-Muzik.",
@@ -4613,7 +4661,7 @@
           || readPendingAuthRole()
           || data.session.user.user_metadata?.account_type;
         if (accountType === "creator" || accountType === "listener") selectedAccountType = accountType;
-        completeLogin(data.session.user.email);
+        completeLogin(data.session.user.email, accountType);
       }
     });
     supabaseClient.auth.onAuthStateChange((event, session) => {
@@ -4630,7 +4678,7 @@
           || readPendingAuthRole()
           || session.user.user_metadata?.account_type;
         if (accountType === "creator" || accountType === "listener") selectedAccountType = accountType;
-        completeLogin(session.user.email);
+        completeLogin(session.user.email, accountType);
       }
       if (event === "SIGNED_OUT" && isLoggedIn) {
         logOut();
@@ -4688,7 +4736,7 @@
         form.reset();
         pendingSignupRole = selectedAccountType;
         if (data.session?.user?.email) {
-          completeLogin(data.session.user.email);
+          completeLogin(data.session.user.email, selectedAccountType);
         } else if (data.user?.email && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
           setAuthScreen("login");
           showToast("If an account exists for this email, check your inbox for a confirmation link or sign in with the method you used before.");
@@ -4701,7 +4749,7 @@
       }
 
       if (data.session?.user?.email) {
-        completeLogin(data.session.user.email);
+        completeLogin(data.session.user.email, data.session.user.user_metadata?.account_type);
       }
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Authentication failed. Please try again.");
