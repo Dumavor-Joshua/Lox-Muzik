@@ -355,6 +355,9 @@
   const notificationsEmpty = document.querySelector("#notifications-empty");
   const notificationStatus = document.querySelector("#notification-status");
   const notificationCount = document.querySelector("#notification-count");
+  const artistProfileActivityList = document.querySelector("#artist-profile-activity-list");
+  const artistProfileActivityEmpty = document.querySelector("#artist-profile-activity-empty");
+  const artistProfileActivityCount = document.querySelector("#artist-profile-activity-count");
   const settingsVolume = document.querySelector("#settings-volume");
   const settingsVolumeValue = document.querySelector("#settings-volume-value");
   const reduceMotionToggle = document.querySelector("#reduce-motion-toggle");
@@ -963,9 +966,62 @@
     button.setAttribute("aria-expanded", "true");
   };
 
+  const renderCreatorProfileActivity = () => {
+    const isCreator = isLoggedIn && currentRole === "creator";
+    const notifications = getCreatorNotifications();
+    const unreadCount = notifications.filter((notification) => !notification.read).length;
+    artistProfileActivityCount.textContent = unreadCount
+      ? `${unreadCount} NEW`
+      : notifications.length ? "ALL CAUGHT UP" : "NO ACTIVITY";
+    artistProfileActivityEmpty.hidden = isCreator && notifications.length > 0;
+    artistProfileActivityList.hidden = !isCreator || notifications.length === 0;
+    if (!isCreator) {
+      artistProfileActivityEmpty.querySelector("strong").textContent = "Creator profile only";
+      artistProfileActivityEmpty.querySelector("p").textContent = "Sign in to a Creator account to view likes and follows for your artist profile.";
+      artistProfileActivityList.replaceChildren();
+      return;
+    }
+    artistProfileActivityEmpty.querySelector("strong").textContent = "No audience activity yet";
+    artistProfileActivityEmpty.querySelector("p").textContent = "Likes on your songs and new followers will appear here.";
+    artistProfileActivityList.replaceChildren();
+    notifications.slice().reverse().forEach((notification) => {
+      const item = document.createElement("article");
+      item.className = `notification-item${notification.read ? "" : " is-unread"}`;
+      const icon = document.createElement("span");
+      icon.className = "notification-item-icon";
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = notification.type === "follow" ? "\u265F" : "\u2665";
+      const copy = document.createElement("div");
+      copy.className = "notification-item-copy";
+      const message = document.createElement("p");
+      const actor = document.createElement("strong");
+      actor.textContent = notification.actorName || "A listener";
+      message.append(actor);
+      message.append(document.createTextNode(notification.type === "follow"
+        ? " followed your artist profile."
+        : notification.type === "artist-like"
+          ? " liked your artist profile."
+          : ` liked "${notification.trackTitle || "your song"}".`));
+      const details = document.createElement("small");
+      const timestamp = notification.createdAt
+        ? new Date(notification.createdAt).toLocaleString()
+        : "Recently";
+      const activityLabel = notification.type === "follow"
+        ? "New follower"
+        : notification.type === "artist-like"
+          ? "New artist like"
+          : notification.artistName || "Your artist profile";
+      details.textContent = `${activityLabel} - ${timestamp}`;
+      copy.append(message, details);
+      item.append(icon, copy);
+      artistProfileActivityList.append(item);
+    });
+  };
+
   const renderNotifications = () => {
     const isCreator = isLoggedIn && currentRole === "creator";
     const notifications = getCreatorNotifications();
+    renderCreatorProfileActivity();
     const unreadCount = notifications.filter((notification) => !notification.read).length;
     notificationCount.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
     notificationCount.hidden = !isCreator || unreadCount === 0;
@@ -2300,6 +2356,7 @@
     document.querySelector("#artist-profile-song-count").textContent = ownTracks.length;
     document.querySelector("#artist-profile-like-count").textContent = ownTracks.reduce((count, track) => count + getTrackLikeCount(track), 0);
     document.querySelector("#artist-profile-follower-count").textContent = engagement.followers;
+    renderCreatorProfileActivity();
   };
 
   const renderLikesView = () => {

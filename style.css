@@ -815,6 +815,37 @@ input:focus-visible {
   font-size: 10px;
 }
 
+.artist-profile-activity {
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px 0;
+}
+
+.artist-profile-activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.artist-profile-activity-heading .eyebrow {
+  margin: 0 0 4px;
+  color: #d78cf2;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+.artist-profile-activity-heading h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 17px;
+}
+
+.artist-profile-activity .notification-list {
+  max-height: 340px;
+}
+
 .artist-profile-preview-note {
   margin: 14px 22px 20px;
 }
@@ -5918,6 +5949,11 @@ input:focus-visible {
   border: 1px solid rgba(226, 174, 255, .09);
   border-radius: 13px;
   background: rgba(255, 255, 255, .025);
+}
+
+.notification-empty-state[hidden],
+.notification-list[hidden] {
+  display: none;
 }
 
 .notification-empty-state>span {

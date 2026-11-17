@@ -873,6 +873,21 @@
               <div><strong id="artist-profile-like-count">0</strong><span>Likes</span></div>
               <div><strong id="artist-profile-follower-count">0</strong><span>Followers</span></div>
             </div>
+            <section class="artist-profile-activity" aria-labelledby="artist-profile-activity-title">
+              <div class="artist-profile-activity-heading">
+                <div>
+                  <p class="eyebrow">YOUR AUDIENCE</p>
+                  <h2 id="artist-profile-activity-title">Recent activity</h2>
+                </div>
+                <span id="artist-profile-activity-count" class="notification-clear-state">NO ACTIVITY</span>
+              </div>
+              <div id="artist-profile-activity-empty" class="notification-empty-state">
+                <span aria-hidden="true">&#9834;</span>
+                <strong>No audience activity yet</strong>
+                <p>Likes on your songs and new followers will appear here.</p>
+              </div>
+              <div id="artist-profile-activity-list" class="notification-list" aria-live="polite" hidden></div>
+            </section>
             <p class="artist-profile-preview-note">Profile preview for this browser.</p>
             <div class="artist-profile-preview-actions">
               <button id="artist-profile-edit" class="artist-play-button" type="button">Edit profile</button>
