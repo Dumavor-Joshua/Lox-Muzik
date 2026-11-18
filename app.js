@@ -4431,11 +4431,20 @@
           }
         }
       }
-      const failureMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
+      const failureMessage = error instanceof Error
+        ? error.message
+        : typeof error?.message === "string"
+          ? error.message
+          : "An unexpected error occurred.";
+      const releaseSchemaMessage = releaseType === "album"
+        && error?.code === "42703"
+        && ["release_id", "release_title", "track_number"].some((column) => failureMessage.includes(column))
+        ? " Run supabase/song-library.sql in your Supabase project's SQL Editor to enable Album / EP uploads, then try again."
+        : "";
       const cleanupMessage = cleanupErrors.length
         ? ` Some uploaded files could not be removed: ${cleanupErrors.join("; ")}.`
         : "";
-      showToast(`${songSaved ? "Song was published, but the page could not update" : "Could not publish song"}: ${failureMessage}.${cleanupMessage}`);
+      showToast(`${songSaved ? "Song was published, but the page could not update" : "Could not publish song"}: ${failureMessage}.${releaseSchemaMessage}${cleanupMessage}`);
     } finally {
       creatorSubmitButton.disabled = false;
       setIconContent(creatorSubmitButton, "plus", creatorReleaseType.value === "album" ? "Publish Album / EP" : "Publish song");
