@@ -13,7 +13,7 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=account-profile-responsive-1" />
+  <link rel="stylesheet" href="style.css?v=download-dialog-1" />
 </head>
 
 <body>
@@ -1270,11 +1270,28 @@
       <i class="fa-solid fa-xmark fa-icon" aria-hidden="true"></i>
     </button>
   </div>
-  <dialog id="download-destination-dialog">
-    <p id="download-destination-track">Choose where to save this song</p>
-    <button id="download-to-device" type="button">Download to device</button>
-    <button id="download-to-library" type="button">Save to library</button>
-    <button id="cancel-download-destination" type="button">Cancel</button>
+  <dialog id="download-destination-dialog" class="download-destination-dialog"
+    aria-labelledby="download-destination-title" aria-describedby="download-destination-track">
+    <div class="download-destination-content">
+      <p class="eyebrow">KEEP THE MUSIC CLOSE</p>
+      <h2 id="download-destination-title">Where would you like to save it?</h2>
+      <p id="download-destination-track" class="download-destination-track">Choose where to save this song</p>
+      <button id="download-to-device" class="download-destination-option" type="button">
+        <span class="download-destination-icon" aria-hidden="true"><i class="fa-solid fa-download fa-icon"></i></span>
+        <span>
+          <strong>Download to device</strong>
+          <small>Save an audio file to this device.</small>
+        </span>
+      </button>
+      <button id="download-to-library" class="download-destination-option" type="button">
+        <span class="download-destination-icon" aria-hidden="true"><i class="fa-solid fa-music fa-icon"></i></span>
+        <span>
+          <strong>Save to library</strong>
+          <small>Keep it in your offline listening library.</small>
+        </span>
+      </button>
+      <button id="cancel-download-destination" class="download-destination-cancel" type="button">Cancel</button>
+    </div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
