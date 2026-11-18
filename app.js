@@ -190,7 +190,11 @@
   };
   const publishSongsToSupabase = async (payloads) => {
     if (!supabaseClient) return null;
-    const { data, error } = await supabaseClient.from("songs").insert(payloads).select();
+    const returnedSongColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,release_id,release_title,track_number,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
+    const { data, error } = await supabaseClient
+      .from("songs")
+      .insert(payloads)
+      .select(returnedSongColumns);
     if (error) throw error;
     return data;
   };
