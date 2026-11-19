@@ -5682,6 +5682,34 @@
   render();
   refreshSharedSongCatalog();
   initializeCompactSelects();
+  const pwaInstallButton = document.querySelector("#pwa-install-button");
+  let pendingInstallPrompt = null;
+  const isInstalledPwa = () => window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+  if (pwaInstallButton) {
+    pwaInstallButton.hidden = isInstalledPwa();
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      pendingInstallPrompt = event;
+      pwaInstallButton.hidden = isInstalledPwa();
+    });
+    pwaInstallButton.addEventListener("click", async () => {
+      if (!pendingInstallPrompt) {
+        showToast(/iphone|ipad|ipod/i.test(navigator.userAgent)
+          ? "To install Lox-Muzik, tap Share, then Add to Home Screen."
+          : "Open your browser menu and choose Install app or Add to Home Screen.");
+        return;
+      }
+      pendingInstallPrompt.prompt();
+      const choice = await pendingInstallPrompt.userChoice;
+      pendingInstallPrompt = null;
+      if (choice.outcome === "accepted") pwaInstallButton.hidden = true;
+    });
+    window.addEventListener("appinstalled", () => {
+      pendingInstallPrompt = null;
+      pwaInstallButton.hidden = true;
+    });
+  }
   if ("serviceWorker" in navigator && window.isSecureContext) {
     navigator.serviceWorker.register("./service-worker.js").catch((error) => {
       console.error("Could not prepare Lox-Muzik for offline use.", error);
