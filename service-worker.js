@@ -1,6 +1,7 @@
-const CACHE_NAME = "lox-muzik-shell-v62";
+const CACHE_NAME = "lox-muzik-shell-v63";
 const APP_SHELL = [
   "./index.html?v=ep-upload-permissions-1",
+  "./manifest.webmanifest",
   "./style.css?v=download-dialog-1",
   "./app.js?v=ep-upload-permissions-1",
   "./LOX-MUZIK_4000px_square.png",
