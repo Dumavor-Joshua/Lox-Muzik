@@ -231,11 +231,15 @@
     return Array.from(songsById.values());
   };
   const loadGlobalTrendPlayCounts = async () => {
-    if (!supabaseClient || isRefreshingGlobalTrendCounts) return;
+    if (!supabaseClient || isRefreshingGlobalTrendCounts || Date.now() < trendStatsRetryAt) return;
     isRefreshingGlobalTrendCounts = true;
     try {
       const { data, error } = await supabaseClient.rpc("get_trending_song_plays");
-      if (error) throw error;
+      if (error) {
+        trendStatsRetryAt = Date.now() + 5 * 60 * 1000;
+        throw error;
+      }
+      trendStatsRetryAt = 0;
       globalTrendPlayCounts.clear();
       (Array.isArray(data) ? data : []).forEach((row) => {
         const count = Number(row.play_count);
@@ -252,7 +256,13 @@
     }
   };
   const reportTrendStatsError = (error) => {
-    console.error("Could not update shared trend activity.", error);
+    const code = String(error?.code || "");
+    const message = String(error?.message || "");
+    if (code === "PGRST202" || code === "42704" || message.includes("Could not find the function")) {
+      console.warn("Shared trend functions are not installed. Run supabase/song-library.sql.");
+    } else {
+      console.warn("Shared trend activity is temporarily unavailable.", error);
+    }
     if (hasReportedTrendStatsError) return;
     hasReportedTrendStatsError = true;
     showToast("Shared trends need the latest Supabase setup. Run supabase/song-library.sql in the Supabase SQL Editor.");
@@ -457,6 +467,7 @@
   const globalTrendPlayCounts = new Map();
   let isRefreshingGlobalTrendCounts = false;
   let hasReportedTrendStatsError = false;
+  let trendStatsRetryAt = 0;
   let pendingDownloadRequest = null;
   let offlineDatabasePromise = null;
   let offlineTracksLoadPromise = Promise.resolve();
@@ -4155,6 +4166,18 @@
   downloadToDeviceButton.addEventListener("click", () => chooseDownloadDestination("device"));
   downloadToLibraryButton.addEventListener("click", () => chooseDownloadDestination("offline"));
   cancelDownloadDestinationButton.addEventListener("click", () => downloadDestinationDialog.close());
+  downloadDestinationDialog.addEventListener("click", (event) => {
+    if (event.target !== downloadDestinationDialog) return;
+    const bounds = downloadDestinationDialog.getBoundingClientRect();
+    if (
+      event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
+    ) {
+      downloadDestinationDialog.close();
+    }
+  });
   downloadDestinationDialog.addEventListener("close", () => {
     pendingDownloadRequest = null;
   });
@@ -4670,20 +4693,30 @@
   document.querySelector("#apple-auth-button")?.addEventListener("click", () => beginSocialAuth("apple"));
 
   if (supabaseClient) {
-    supabaseClient.auth.getSession().then(({ data, error }) => {
-      if (error) {
-        if (socialAuthMessage) socialAuthMessage.textContent = error.message;
-        return;
+    const restoreSupabaseSession = async () => {
+      try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) {
+          const message = String(error.message || "").toLowerCase();
+          if (!/network|fetch|connection|closed|offline/i.test(message) && socialAuthMessage) {
+            socialAuthMessage.textContent = error.message;
+          }
+          return;
+        }
+        if (data.session?.user?.email && !isLoggedIn) {
+          const accountType = readEmailConfirmationRole()
+            || pendingSignupRole
+            || readPendingAuthRole()
+            || data.session.user.user_metadata?.account_type;
+          if (accountType === "creator" || accountType === "listener") selectedAccountType = accountType;
+          completeLogin(data.session.user.email, accountType);
+        }
+      } catch (error) {
+        console.warn("Could not restore your sign-in session while offline.", error);
       }
-      if (data.session?.user?.email && !isLoggedIn) {
-        const accountType = readEmailConfirmationRole()
-          || pendingSignupRole
-          || readPendingAuthRole()
-          || data.session.user.user_metadata?.account_type;
-        if (accountType === "creator" || accountType === "listener") selectedAccountType = accountType;
-        completeLogin(data.session.user.email, accountType);
-      }
-    });
+    };
+    restoreSupabaseSession();
+    window.addEventListener("online", restoreSupabaseSession);
     supabaseClient.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         setAuthScreen("password-recovery");

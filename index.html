@@ -13,15 +13,17 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
-  <link rel="stylesheet" href="style.css?v=download-dialog-1" />
+  <link rel="stylesheet" href="style.css?v=download-dialog-2" />
 </head>
 
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
   <!-- Authentication and account entry screens -->
   <div class="auth-page" id="auth-page">
     <div class="auth-card">
       <div class="auth-brand" aria-label="Lox-Muzik login">
-        <img class="brand-logo" src="LOX-MUZIK_4000px_square.png" alt="" />
+        <img class="brand-logo" src="LOX-MUZIK_4000px_square.png" alt="" width="48" height="48" />
       </div>
       <p id="auth-kicker" class="auth-kicker">Log in</p>
       <h1 id="auth-title">Choose how you want to use Lox-Muzik.</h1>
@@ -142,7 +144,7 @@
   <div class="app-shell app-shell-hidden" id="app-shell">
     <aside class="sidebar" aria-label="Main navigation">
       <a class="brand" href="#" aria-label="Lox-Muzik home">
-        <img class="brand-logo" src="LOX-MUZIK_4000px_square.png" alt="" />
+        <img class="brand-logo" src="LOX-MUZIK_4000px_square.png" alt="" width="48" height="48" />
         <span>LOX<span class="brand-dash">-</span>MUZIK</span>
       </a>
 
@@ -199,10 +201,10 @@
       </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="main-content" tabindex="-1">
       <header class="topbar">
         <a class="brand mobile-brand" href="#" aria-label="Lox-Muzik home">
-          <img class="brand-logo" src="LOX-MUZIK_4000px_square.png" alt="" />
+          <img class="brand-logo" src="LOX-MUZIK_4000px_square.png" alt="" width="48" height="48" />
           <span>LOX<span class="brand-dash">-</span>MUZIK</span>
         </a>
         <div id="search-container" class="search-container">
@@ -361,9 +363,9 @@
       <section id="release-view" class="release-view" hidden aria-labelledby="release-title">
         <div id="release-hero" class="release-hero art-2">
           <div class="release-hero-gallery" aria-hidden="true">
-            <img src="imgs/release-hero-1.jpg" alt="" />
-            <img src="imgs/release-hero-2.jpg" alt="" />
-            <img src="imgs/release-hero-3.jpg" alt="" />
+            <img src="imgs/release-hero-1.jpg" alt="" width="960" height="540" />
+            <img src="imgs/release-hero-2.jpg" alt="" width="960" height="540" />
+            <img src="imgs/release-hero-3.jpg" alt="" width="960" height="540" />
           </div>
           <div class="release-hero-copy">
             <p id="release-eyebrow" class="eyebrow">YOUR LIBRARY</p>
@@ -770,7 +772,7 @@
             details any time.</p>
           <div class="creator-public-profile-summary">
             <span class="creator-public-profile-avatar" aria-hidden="true">
-              <img id="creator-studio-profile-photo" alt="" hidden />
+              <img id="creator-studio-profile-photo" alt="" width="80" height="80" hidden />
               <span id="creator-studio-profile-initials"><i class="fa-solid fa-music fa-icon" aria-hidden="true"></i></span>
             </span>
             <span>
@@ -853,10 +855,10 @@
         <div class="artist-profile-layout">
           <section class="artist-profile-preview creator-panel" aria-labelledby="artist-profile-preview-title">
             <div class="artist-profile-cover">
-              <img id="artist-profile-cover-photo" class="artist-profile-cover-photo" alt="" aria-hidden="true"
+              <img id="artist-profile-cover-photo" class="artist-profile-cover-photo" alt="" width="960" height="540" aria-hidden="true"
                 hidden />
               <span class="artist-profile-avatar" aria-hidden="true">
-                <img id="artist-profile-avatar-photo" alt="" hidden />
+                <img id="artist-profile-avatar-photo" alt="" width="160" height="160" hidden />
                 <span id="artist-profile-avatar-initials"><i class="fa-solid fa-music fa-icon" aria-hidden="true"></i></span>
               </span>
               <div class="artist-profile-preview-heading">
@@ -916,7 +918,7 @@
                         accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                         aria-describedby="creator-profile-photo-help" />
                       <span class="profile-photo-placeholder" aria-hidden="true">+</span>
-                      <img id="creator-profile-photo-preview" class="profile-photo-preview" alt="Selected profile photo"
+                      <img id="creator-profile-photo-preview" class="profile-photo-preview" alt="Selected profile photo" width="160" height="160"
                         hidden />
                     </label>
                     <span id="creator-profile-photo-picker-hint" class="profile-photo-picker-hint">Choose a photo</span>
@@ -1273,24 +1275,36 @@
   <dialog id="download-destination-dialog" class="download-destination-dialog"
     aria-labelledby="download-destination-title" aria-describedby="download-destination-track">
     <div class="download-destination-content">
-      <p class="eyebrow">KEEP THE MUSIC CLOSE</p>
-      <h2 id="download-destination-title">Where would you like to save it?</h2>
+      <button id="cancel-download-destination" class="download-destination-close" type="button"
+        aria-label="Close download destination">
+        <i class="fa-solid fa-xmark fa-icon" aria-hidden="true"></i>
+      </button>
+      <header class="download-destination-header">
+        <span class="download-destination-mark" aria-hidden="true"><i class="fa-solid fa-arrow-down fa-icon"></i></span>
+        <div>
+          <p class="eyebrow">Save this track</p>
+          <h2 id="download-destination-title">Choose a destination</h2>
+        </div>
+      </header>
       <p id="download-destination-track" class="download-destination-track">Choose where to save this song</p>
-      <button id="download-to-device" class="download-destination-option" type="button">
-        <span class="download-destination-icon" aria-hidden="true"><i class="fa-solid fa-download fa-icon"></i></span>
-        <span>
-          <strong>Download to device</strong>
-          <small>Save an audio file to this device.</small>
-        </span>
-      </button>
-      <button id="download-to-library" class="download-destination-option" type="button">
-        <span class="download-destination-icon" aria-hidden="true"><i class="fa-solid fa-music fa-icon"></i></span>
-        <span>
-          <strong>Save to library</strong>
-          <small>Keep it in your offline listening library.</small>
-        </span>
-      </button>
-      <button id="cancel-download-destination" class="download-destination-cancel" type="button">Cancel</button>
+      <div class="download-destination-options" role="group" aria-label="Download destination">
+        <button id="download-to-device" class="download-destination-option" type="button">
+          <span class="download-destination-icon" aria-hidden="true"><i class="fa-solid fa-mobile-screen fa-icon"></i></span>
+          <span>
+            <strong>Device</strong>
+            <small>Download an audio file</small>
+          </span>
+          <i class="fa-solid fa-chevron-right download-destination-arrow" aria-hidden="true"></i>
+        </button>
+        <button id="download-to-library" class="download-destination-option" type="button">
+          <span class="download-destination-icon" aria-hidden="true"><i class="fa-solid fa-headphones fa-icon"></i></span>
+          <span>
+            <strong>Lox library</strong>
+            <small>Listen offline anytime</small>
+          </span>
+          <i class="fa-solid fa-chevron-right download-destination-arrow" aria-hidden="true"></i>
+        </button>
+      </div>
     </div>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
