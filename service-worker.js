@@ -1,4 +1,4 @@
-const CACHE_NAME = "lox-muzik-shell-v63";
+const CACHE_NAME = "lox-muzik-shell-v64";
 const APP_SHELL = [
   "./index.html?v=ep-upload-permissions-1",
   "./manifest.webmanifest",
@@ -9,10 +9,14 @@ const APP_SHELL = [
   "./imgs/welcome-radio.jpg",
   "./imgs/lox-muzik-download-cover.png",
 ];
+const OPTIONAL_ASSETS = ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME)
-    .then((cache) => cache.addAll(APP_SHELL))
+    .then(async (cache) => {
+      await cache.addAll(APP_SHELL);
+      await Promise.allSettled(OPTIONAL_ASSETS.map((url) => cache.add(url)));
+    })
     .then(() => self.skipWaiting()));
 });
 
@@ -26,10 +30,11 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== "GET" || new URL(request.url).origin !== self.location.origin) return;
+  if (request.method !== "GET") return;
 
   event.respondWith(caches.match(request, { ignoreSearch: true }).then((cachedResponse) => {
     if (cachedResponse) return cachedResponse;
+    if (new URL(request.url).origin !== self.location.origin) return fetch(request);
     return fetch(request).catch((error) => {
       if (request.mode === "navigate") {
         return caches.match("./index.html", { ignoreSearch: true }).then((offlinePage) => {
