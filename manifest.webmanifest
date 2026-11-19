@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Lox-Muzik",
+  "short_name": "Lox-Muzik",
+  "description": "Listen to your music and play downloaded songs offline.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#140529",
+  "theme_color": "#140529",
+  "icons": [
+    {
+      "src": "./LOX-MUZIK_4000px_square.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
