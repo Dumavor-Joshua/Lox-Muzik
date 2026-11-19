@@ -198,15 +198,17 @@
     if (error) throw error;
     return data;
   };
-  const loadSupabaseSongs = async () => {
-    if (!supabaseClient) return [];
+  const loadSupabaseSongPage = async (offset, pageSize) => {
+    if (!supabaseClient) return { songs: [], publicCount: 0 };
     const songColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,release_id,release_title,track_number,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
     const legacySongColumns = "id,title,artist,artist_names,file_name,audio_url,cover_url,release_type,genre,allow_streaming,allow_offline,allow_download_to_phone,allow_video_use,created_at";
     const fetchPublicSongs = (columns) => supabaseClient
       .from("songs")
       .select(columns)
       .eq("allow_streaming", true)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
     let { data: publicSongs, error: publicError } = await fetchPublicSongs(songColumns);
     if (publicError?.code === "42703"
       && ["release_id", "release_title", "track_number"].some((column) => publicError.message?.includes(column))) {
@@ -215,8 +217,9 @@
     }
     if (publicError) throw publicError;
 
+    const visibleSongs = Array.isArray(publicSongs) ? publicSongs : [];
     let ownedSongs = [];
-    if (isLoggedIn && currentRole === "creator" && accountEmail) {
+    if (offset === 0 && isLoggedIn && currentRole === "creator" && accountEmail) {
       const { data, error } = await supabaseClient.rpc("get_my_songs");
       if (error) throw error;
       ownedSongs = Array.isArray(data)
@@ -225,10 +228,10 @@
     }
 
     const songsById = new Map();
-    [...(Array.isArray(publicSongs) ? publicSongs : []), ...ownedSongs].forEach((song) => {
+    [...visibleSongs, ...ownedSongs].forEach((song) => {
       if (song?.id != null) songsById.set(String(song.id), song);
     });
-    return Array.from(songsById.values());
+    return { songs: Array.from(songsById.values()), publicCount: visibleSongs.length };
   };
   const loadGlobalTrendPlayCounts = async () => {
     if (!supabaseClient || isRefreshingGlobalTrendCounts || Date.now() < trendStatsRetryAt) return;
@@ -326,27 +329,51 @@
   let sharedSongCatalogRequestId = 0;
   const refreshSharedSongCatalog = async () => {
     const requestId = ++sharedSongCatalogRequestId;
+    const pageSize = 60;
+    let offset = 0;
+    let isFirstBatch = true;
     try {
-      const songs = await loadSupabaseSongs();
-      if (requestId !== sharedSongCatalogRequestId) return;
-      try {
-        await loadGlobalTrendPlayCounts();
-      } catch (error) {
-        reportTrendStatsError(error);
+      while (true) {
+        const { songs, publicCount } = await loadSupabaseSongPage(offset, pageSize);
+        if (requestId !== sharedSongCatalogRequestId) return;
+
+        const cloudTracks = songs
+          .map(mapSupabaseSongToTrack)
+          .filter((track) => track.url || track.storagePath);
+
+        if (isFirstBatch) {
+          for (let index = tracks.length - 1; index >= 0; index -= 1) {
+            if (tracks[index].isSupabaseTrack) tracks.splice(index, 1);
+          }
+          isFirstBatch = false;
+        }
+
+        const knownTrackIds = new Set(tracks
+          .filter((track) => track.isSupabaseTrack)
+          .map((track) => track.id));
+        cloudTracks.forEach((track) => {
+          if (!knownTrackIds.has(track.id)) {
+            tracks.push(track);
+            knownTrackIds.add(track.id);
+          }
+        });
+
+        // Paint each page before requesting the next one. Audio URLs are created
+        // only when a listener actually plays or downloads a track.
+        render();
+
+        if (offset === 0) {
+          loadGlobalTrendPlayCounts()
+            .then(() => {
+              if (requestId === sharedSongCatalogRequestId) render();
+            })
+            .catch(reportTrendStatsError);
+        }
+
+        if (publicCount < pageSize) break;
+        offset += pageSize;
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       }
-      const cloudTracks = await Promise.all(songs
-        .map(mapSupabaseSongToTrack)
-        .filter((track) => track.url || track.storagePath)
-        .map(async (track) => {
-          if (track.storagePath) await getTrackAudioUrl(track);
-          return track;
-        }));
-      if (requestId !== sharedSongCatalogRequestId) return;
-      for (let index = tracks.length - 1; index >= 0; index -= 1) {
-        if (tracks[index].isSupabaseTrack) tracks.splice(index, 1);
-      }
-      tracks.push(...cloudTracks);
-      render();
     } catch (error) {
       if (requestId !== sharedSongCatalogRequestId) return;
       console.error("Could not load the shared song catalog.", error);
